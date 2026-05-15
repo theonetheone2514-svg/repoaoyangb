@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>เอาหยังบ่ | สั่งออนไลน์</title>
+ <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+ <style>
+ :root { 
+ --bg: #f7f1e3; 
+ --primary: #5d4037; 
+ --btn: #8d6e63; 
+ --line: #00b900;
+ --accent: #ff6b6b;
+ --gold: #ffd700;
+ }
+ * { box-sizing: border-box; margin: 0; padding: 0; }
+ body { font-family: 'Kanit', sans-serif; background: var(--bg); color: var(--primary); padding-bottom: 200px; }
+ 
+ /* Navbar */
+ nav { 
+ background: #fff; 
+ padding: 15px 5%; 
+ display: flex; 
+ justify-content: space-between;
+ align-items: center;
+ box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+ position: sticky; 
+ top: 0; 
+ z-index: 1000; 
+ }
+ .logo { font-size: 24px; font-weight: 600; }
+ .nav-links { display: flex; gap: 30px; }
+ .nav-links a { 
+ text-decoration: none; 
+ color: var(--primary); 
+ font-weight: 500;
+ cursor: pointer;
+ transition: color 0.3s;
+ }
+ .nav-links a:hover { color: var(--btn); }
+ .points-badge { 
+ background: var(--gold); 
+ padding: 5px 15px; 
+ border-radius: 20px; 
+ font-weight: 600;
+ font-size: 14px;
+ }
+ 
+ /* Promo Banner */
+ .promo-banner { 
+ background: linear-gradient(135deg, var(--accent), #ff8e8e); 
+ color: white;
+ text-align: center; 
+ padding: 15px; 
+ font-size: 16px;
+ font-weight: 500;
+ }
+ 
+ .container { max-width: 1000px; margin: 20px auto; padding: 0 20px; }
+ 
+ /* Page Sections */
+ .page-section { display: none; }
+ .page-section.active { display: block; }
+ 
+ /* About Page */
+ .about-hero {
+ background: linear-gradient(135deg, var(--btn), var(--primary));
+ color: white;
+ padding: 60px 20px;
+ text-align: center;
+ border-radius: 15px;
+ margin-bottom: 30px;
+ }
+ .about-hero h1 { font-size: 36px; margin-bottom: 15px; }
+ .about-hero p { font-size: 18px; opacity: 0.9; }
+ 
+ .about-content {
+ background: white;
+ padding: 30px;
+ border-radius: 15px;
+ box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+ }
+ .about-content h2 { margin-bottom: 15px; color: var(--primary); }
+ .about-content p { line-height: 1.8; margin-bottom: 15px; }
+ 
+ .contact-info {
+ display: grid;
+ grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+ gap: 20px;
+ margin-top: 30px;
+ }
+ .contact-card {
+ background: var(--bg);
+ padding: 20px;
+ border-radius: 10px;
+ text-align: center;
+ }
+ .contact-card i { font-size: 30px; color: var(--btn); margin-bottom: 10px; }
+ 
+ /* Category Title */
+ .category-title { 
+ grid-column: 1 / -1; 
+ margin: 30px 0 15px 0; 
+ font-size: 22px; 
+ border-left: 6px solid var(--btn); 
+ padding-left: 15px;
+ background: rgba(255,255,255,0.5);
+ padding: 10px 15px;
+ border-radius: 0 8px 8px 0;
+ }
+
+ /* Menu Grid */
+ .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
+
+/* Category Button Strip */
+ .category-strip {
+ display: flex;
+ flex-wrap: wrap;
+ gap: 12px;
+ margin: 20px 0;
+ padding: 0;
+ }
+ .category-btn {
+ background: var(--bg);
+ border: 2px solid var(--primary);
+ color: var(--primary);
+ padding: 10px 20px;
+ border-radius: 25px;
+ font-size: 16px;
+ font-weight: 500;
+ cursor: pointer;
+ transition: all 0.3s ease;
+ display: flex;
+ align-items: center;
+ gap: 6px;
+ }
+ .category-btn:hover {
+ background: var(--primary);
+ color: white;
+ transform: translateY(-2px);
+ }
+ .category-btn.active {
+ background: var(--btn);
+ color: white;
+ border-color: var(--btn);
+ box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+ }
+ .menu-item { 
+ background: #fff; 
+ border-radius: 12px; 
+ padding: 15px; 
+ display: flex; 
+ align-items: center; 
+ box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+ transition: 0.3s; 
+ position: relative;
+ }
+ .menu-item:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+ .menu-item.out-of-stock { opacity: 0.6; }
+ .menu-item img { width: 90px; height: 90px; object-fit: cover; border-radius: 8px; margin-right: 15px; background: #eee; }
+ .item-info { flex: 1; }
+ .item-info h3 { font-size: 18px; margin-bottom: 5px; }
+ .price { font-size: 20px; font-weight: 600; margin-bottom: 8px; color: var(--btn); }
+ .stock-info { font-size: 0.85em; color: #666; margin-bottom: 8px; }
+ .stock-info.low { color: var(--accent); font-weight: 500; }
+ .order-btn { 
+ background: var(--btn); 
+ color: #fff; 
+ border: none; 
+ padding: 8px 20px; 
+ border-radius: 6px; 
+ cursor: pointer; 
+ font-family: 'Kanit'; 
+ font-size: 14px;
+ transition: 0.2s; 
+ }
+ .order-btn:hover { background: var(--primary); }
+ .order-btn:disabled { background: #ccc; cursor: not-allowed; }
+ .out-of-stock-badge {
+ position: absolute;
+ top: 10px;
+ right: 10px;
+ background: var(--accent);
+ color: white;
+ padding: 3px 10px;
+ border-radius: 15px;
+ font-size: 12px;
+ }
+ 
+ /* Cart Sidebar */
+ #cartBar { 
+ position: fixed; 
+ bottom: 0; 
+ left: 0; 
+ right: 0; 
+ background: #fff; 
+ padding: 20px; 
+ box-shadow: 0 -5px 20px rgba(0,0,0,0.15); 
+ z-index: 1000; 
+ border-radius: 20px 20px 0 0;
+ transform: translateY(100%);
+ transition: transform 0.3s;
+ max-height: 70vh;
+ overflow-y: auto;
+ }
+ #cartBar.show { transform: translateY(0); }
+ 
+ .cart-header {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ margin-bottom: 15px;
+ padding-bottom: 15px;
+ border-bottom: 2px solid #eee;
+ }
+ .cart-title { font-size: 20px; font-weight: 600; }
+ .cart-close {
+ background: none;
+ border: none;
+ font-size: 24px;
+ cursor: pointer;
+ color: #666;
+ }
+ 
+ .cart-items { margin-bottom: 15px; }
+ .cart-item {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ padding: 12px 0;
+ border-bottom: 1px solid #eee;
+ }
+ .cart-item-info { flex: 1; }
+ .cart-item-name { font-weight: 500; }
+ .cart-item-price { color: #666; font-size: 14px; }
+ 
+ .quantity-control {
+ display: flex;
+ align-items: center;
+ gap: 10px;
+ }
+ .qty-btn {
+ width: 30px;
+ height: 30px;
+ border: 1px solid #ddd;
+ background: #f5f5f5;
+ border-radius: 5px;
+ cursor: pointer;
+ font-size: 16px;
+ transition: 0.2s;
+ }
+ .qty-btn:hover { background: #e0e0e0; }
+ .qty-value { font-weight: 600; min-width: 30px; text-align: center; }
+ .remove-btn {
+ background: var(--accent);
+ color: white;
+ border: none;
+ padding: 5px 12px;
+ border-radius: 5px;
+ cursor: pointer;
+ margin-left: 10px;
+ font-size: 12px;
+ }
+ 
+ .cart-footer {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ flex-wrap: wrap;
+ gap: 15px;
+ padding-top: 15px;
+ border-top: 2px solid #eee;
+ }
+ .cart-total { font-size: 20px; }
+ .cart-total span { font-size: 28px; font-weight: 700; color: var(--btn); }
+ 
+ .cart-actions {
+ display: flex;
+ gap: 10px;
+ flex-wrap: wrap;
+ }
+ .clear-btn {
+ background: #666;
+ color: white;
+ border: none;
+ padding: 12px 20px;
+ border-radius: 25px;
+ cursor: pointer;
+ font-family: 'Kanit';
+ font-size: 14px;
+ }
+ .clear-btn:hover { background: #555; }
+ .confirm-btn { 
+ background: var(--line); 
+ color: #fff; 
+ padding: 12px 25px; 
+ border-radius: 25px; 
+ border: none; 
+ font-size: 16px; 
+ font-weight: 600; 
+ cursor: pointer; 
+ font-family: 'Kanit';
+ display: flex;
+ align-items: center;
+ gap: 8px;
+ }
+ .confirm-btn:hover { background: #009900; }
+ 
+ /* Cart Toggle Button */
+ .cart-toggle {
+ position: fixed;
+ bottom: 30px;
+ right: 30px;
+ width: 60px;
+ height: 60px;
+ background: var(--btn);
+ color: white;
+ border: none;
+ border-radius: 50%;
+ font-size: 24px;
+ cursor: pointer;
+ box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+ z-index: 999;
+ transition: 0.3s;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ }
+ .cart-toggle:hover { transform: scale(1.1); }
+ .cart-count {
+ position: absolute;
+ top: -5px;
+ right: -5px;
+ background: var(--accent);
+ color: white;
+ width: 24px;
+ height: 24px;
+ border-radius: 50%;
+ font-size: 12px;
+ font-weight: 600;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ }
+ 
+ /* Promo Section */
+ .promo-section {
+ background: linear-gradient(135deg, #fff9e6, #fff3cd);
+ border: 2px solid var(--gold);
+ border-radius: 15px;
+ padding: 20px;
+ margin-bottom: 25px;
+ }
+ .promo-section h3 {
+ color: var(--primary);
+ margin-bottom: 10px;
+ display: flex;
+ align-items: center;
+ gap: 10px;
+ }
+ .promo-list {
+ list-style: none;
+ }
+ .promo-list li {
+ padding: 8px 0;
+ border-bottom: 1px dashed #ddd;
+ display: flex;
+ align-items: center;
+ gap: 10px;
+ }
+ .promo-list li:last-child { border-bottom: none; }
+ .promo-badge {
+ background: var(--accent);
+ color: white;
+ padding: 3px 10px;
+ border-radius: 15px;
+ font-size: 12px;
+ font-weight: 600;
+ }
+ 
+ /* Discount Display */
+ .discount-info {
+ background: #e8f5e9;
+ padding: 10px 15px;
+ border-radius: 8px;
+ margin-top: 10px;
+ color: #2e7d32;
+ font-weight: 500;
+ }
+ .final-total {
+ font-size: 24px !important;
+ color: var(--accent) !important;
+ }
+ 
+ /* Loading */
+ #status {
+ text-align: center;
+ padding: 60px 20px;
+ }
+ .spinner {
+ width: 50px;
+ height: 50px;
+ border: 4px solid #f3f3f3;
+ border-top: 4px solid var(--btn);
+ border-radius: 50%;
+ animation: spin 1s linear infinite;
+ margin: 0 auto 20px;
+ }
+ @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+ 
+ /* Responsive */
+ @media (max-width: 768px) {
+ .nav-links { gap: 15px; font-size: 14px; }
+ .logo { font-size: 20px; }
+ .menu-item { flex-direction: column; text-align: center; }
+ .menu-item img { margin-right: 0; margin-bottom: 10px; }
+ .cart-footer { flex-direction: column; align-items: stretch; }
+ .cart-actions { justify-content: center; }
+ }
+ </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav>
+ <div class="logo">🥤 เอาหยังบ่</div>
+ <div class="nav-links">
+ <a onclick="showPage('home')">หน้าแรก</a>
+ <a onclick="showPage('about')">เกี่ยวกับเรา</a>
+ </div>
+ <div class="points-badge">
+ <i class="fas fa-star" style="color: var(--gold);"></i>
+ <span id="userPoints">0</span> แต้ม
+ </div>
+</nav>
+
+<!-- Promo Banner -->
+<div class="promo-banner">
+ 🎉 โปรโมชั่นพิเศษ! สะสมแต้มทุกการสั่งซื้อ 100 บาท = 1 แต้ม | ซื้อครบ 500 บาท ส่งฟรี! | แนะนำเพื่อนรับส่วนลด 10%
+</div>
+
+<!-- HOME PAGE -->
+<div id="homePage" class="page-section active">
+ <div class="container">
+ 
+ <!-- Promo Section -->
+ <div class="promo-section">
+ <h3><i class="fas fa-gift"></i> โปรโมชั่นประจำเดือน</h3>
+ <ul class="promo-list">
+ <li><span class="promo-badge">HOT</span> ซื้อครบ 500 บาท ส่งฟรีทันที!</li>
+ <li><span class="promo-badge">NEW</span> สมัครสมาชิกรับแต้มสะสม 2 เท่า</li>
+ <li><span class="promo-badge">SALE</span> เมนูแนะนำลด 10% ทุกวันศุกร์</li>
+ <li><span class="promo-badge">FRIEND</span> แนะนำเพื่อนรับส่วนลด 10%</li>
+ </ul>
+ </div>
+ 
+ <div id="status">
+ <div class="spinner"></div>
+ <p>กำลังจัดเตรียมเมนูอร่อยๆ...</p>
+ </div>
+ <div class="menu-grid" id="menuGrid"></div>
+ </div>
+</div>
+
+<!-- ABOUT PAGE -->
+<div id="aboutPage" class="page-section">
+ <div class="container">
+ <div class="about-hero">
+ <h1>🥤 เอาหยังบ่</h1>
+ <p>เครื่องดื่มสดใหม่จากสวน ส่งตรงถึงมือคุณ</p>
+ </div>
+ 
+ <div class="about-content">
+ <h2>🌿 เกี่ยวกับร้านเรา</h2>
+ <p>
+ "เอาหยังบ่" เป็นร้านเครื่องดื่มที่คัดสรรวัตถุดิบคุณภาพดีจากสวน เราเน้นความสดใหม่ 
+ และรสชาติที่เป็นเอกลักษณ์ เพื่อให้คุณได้สัมผัสประสบการณ์ที่ดีที่สุดในทุกแก้ว
+ </p>
+ <p>
+ เราเริ่มต้นจากความรักในเครื่องดื่มและความตั้งใจที่จะนำเสนอสิ่งที่ดีที่สุดให้กับลูกค้า 
+ ทุกเมนูของเราผ่านการคิดค้นและทดลองมาอย่างพิถีพิถัน
+ </p>
+ 
+ <h2 style="margin-top: 30px;">📞 ติดต่อเรา</h2>
+ <div class="contact-info">
+ <div class="contact-card">
+ <i class="fas fa-phone"></i>
+ <h3>โทรศัพท์</h3>
+ <p>08x-xxx-xxxx</p>
+ </div>
+ <div class="contact-card">
+ <i class="fab fa-line"></i>
+ <h3>LINE</h3>
+ <p>@aoyangna</p>
+ </div>
+ <div class="contact-card">
+ <i class="fas fa-map-marker-alt"></i>
+ <h3>ที่อยู่</h3>
+ <p>จังหวัดเชียงใหม่</p>
+ </div>
+ <div class="contact-card">
+ <i class="fas fa-clock"></i>
+ <h3>เวลาทำการ</h3>
+ <p>9:00 - 20:00 น.</p>
+ </div>
+ </div>
+ 
+ <h2 style="margin-top: 30px;">🎯 วิสัยทัศน์</h2>
+ <p>
+ เรามุ่งมั่นที่จะเป็นร้านเครื่องดื่มที่ลูกค้าไว้วางใจ และเป็นส่วนหนึ่งในความสุขเล็กๆ ของทุกวัน
+ </p>
+ </div>
+ </div>
+</div>
+
+<!-- Cart Toggle Button -->
+<button class="cart-toggle" onclick="toggleCart()">
+ <i class="fas fa-shopping-cart"></i>
+ <span class="cart-count" id="cartCount">0</span>
+</button>
+
+<!-- Cart Sidebar -->
+<div id="cartBar">
+ <div class="cart-header">
+ <div class="cart-title"><i class="fas fa-shopping-basket"></i> ตะกร้าของฉัน</div>
+ <button class="cart-close" onclick="toggleCart()">×</button>
+ </div>
+ 
+ <div class="cart-items" id="cartItems">
+ <!-- Cart items will be inserted here -->
+ </div>
+ 
+ <div id="cartEmpty" style="text-align: center; padding: 40px; color: #999;">
+ <i class="fas fa-shopping-basket" style="font-size: 48px; margin-bottom: 15px;"></i>
+ <p>ตะกร้าว่างเปล่า</p>
+ </div>
+ 
+ <div class="cart-footer" id="cartFooter" style="display: none;">
+ <div>
+ <div class="cart-total">รวม: <span id="cartTotal">0</span> บาท</div>
+ <div id="discountInfo" class="discount-info" style="display: none;"></div>
+ </div>
+ <div class="cart-actions">
+ <button class="clear-btn" onclick="clearCart()">
+ <i class="fas fa-trash"></i> เคลียร์ตะกร้า
+ </button>
+ <button class="confirm-btn" onclick="sendLine()">
+ <i class="fab fa-line"></i> ยืนยันสั่งซื้อ
+ </button>
+ </div>
+ </div>
+</div>
+
+<script>
+ // ⚠️ แก้ตรงนี้: ใส่ URL Apps Script ที่ Deploy ไว้
+ const API_URL = 'https://script.google.com/macros/s/AKfycbzW1bVqjN1pZ-r9I-FcAoiNe6VbyTEVpW149BgcQzuJrsfrPo2BKJxPr7ZAAU1t_ybksA/exec';
+ 
+ let cart = [];
+ let userPoints = 0; // ดึงจากฐานข้อมูลจริงได้
+ 
+ // ============================================
+ // PAGE NAVIGATION
+ // ============================================
+ function showPage(page) {
+ document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+ if (page === 'home') {
+ document.getElementById('homePage').classList.add('active');
+ } else if (page === 'about') {
+ document.getElementById('aboutPage').classList.add('active');
+ }
+ window.scrollTo(0, 0);
+ }
+ 
+ // ============================================
+ // LOAD MENU
+ // ============================================
+ async function loadMenu() {
+ try {
+ const res = await fetch(API_URL);
+ const data = await res.json(); 
+ 
+ let categories = {}; 
+
+ data.forEach(item => {
+ const category = item.category || 'เมนูแนะนำ';
+ if (!categories[category]) categories[category] = [];
+
+ const isOut = item.stock <= 0; 
+ const isLow = item.stock > 0 && item.stock <= 5;
+
+ categories[category].push({
+   ...item,
+   isOut,
+   isLow
+ });
+ });
+
+ document.getElementById('status').style.display = 'none';
+
+ // เก็บข้อมูลเมนูไว้ในตัวแปร global
+ menuDataCache = categories;
+
+ // สร้างแถวปุ่มหมวดหมู่
+ let categoryButtonsHTML = '';
+ let categoryList = Object.keys(categories);
+ if (categoryList.length > 0) {
+   categoryButtonsHTML = '<div class="category-strip">';
+   categoryList.forEach(cat => {
+     categoryButtonsHTML += `<button class="category-btn" onclick="showCategory('${cat.replace(/'/g, "\\'")}')">${cat}</button>`;
+   });
+   categoryButtonsHTML += '</div>';
+ }
+ document.getElementById('menuGrid').innerHTML = categoryButtonsHTML + '<div id="categoryItems"></div>';
+
+ // แสดงหมวดหมู่แรกเป็นค่าเริ่มต้น
+ if (categoryList.length > 0) {
+   showCategory(categoryList[0]);
+ }
+ } catch (err) {
+ console.error("Error:", err);
+ document.getElementById('status').innerHTML = '❌ เกิดข้อผิดพลาดในการดึงข้อมูล<br>โปรดตรวจสอบการเผยแพร่ Google Sheet';
+ document.getElementById('menuGrid').innerHTML = '<div class="category-strip"></div><div id="categoryItems">ไม่พบข้อมูลเมนู</div>';
+ }
+ }
+
+// ============================================
+ // SHOW CATEGORY ITEMS
+ // ============================================
+ function showCategory(category) {
+ // อัปเดตสถานะปุ่ม
+ document.querySelectorAll('.category-btn').forEach(btn => {
+   btn.classList.remove('active');
+   if (btn.textContent.trim() === category) {
+     btn.classList.add('active');
+   }
+ });
+
+ // สร้าง HTML รายการในหมวดหมู่นี้
+ let itemsHTML = '';
+ const items = menuDataCache[category] || [];
+
+ if (items && items.length > 0) {
+   items.forEach(item => {
+     const isOut = item.isOut;
+     const isLow = item.isLow;
+     itemsHTML += `
+     <div class="menu-item ${isOut ? 'out-of-stock' : ''}">
+     ${isOut ? '<div class="out-of-stock-badge">หมด</div>' : ''}
+     <img src="${item.img}" onerror="this.src='https://via.placeholder.com/90?text=No+Image'" alt="${item.name}">
+     <div class="item-info">
+     <h3>${item.name}</h3>
+     <div class="stock-info ${isLow ? 'low' : ''}">
+     ${isOut ? '❌ สินค้าหมด' : isLow ? '⚠️ เหลือน้อย ' + item.stock + ' ชิ้น' : '✓ คงเหลือ ' + item.stock + ' ชิ้น'}
+     </div>
+     <div class="price">${item.price}.-</div>
+     <button class="order-btn" onclick="addToCart('${item.name}', ${item.price})" ${isOut ? 'disabled' : ''}>
+     ${isOut ? 'สินค้าหมด' : '<i class="fas fa-plus"></i> เพิ่มลงตะกร้า'}
+     </button>
+     </div>
+     </div>`;
+   });
+ } else {
+   itemsHTML = '<p style="text-align: center; padding: 40px; color: #666;">ไม่มีรายการในหมวดหมู่นี้</p>';
+ }
+
+ document.getElementById('categoryItems').innerHTML = itemsHTML;
+ }
+
+// เก็บข้อมูลเมนูไว้ในตัวแปร global เพื่อใช้ใน showCategory
+ let menuDataCache = {};
+ 
+ // ============================================
+ // CART FUNCTIONS
+ // ============================================
+ function addToCart(name, price) {
+ const existing = cart.find(item => item.name === name);
+ if (existing) {
+ existing.qty++;
+ } else {
+ cart.push({ name, price, qty: 1 });
+ }
+ updateCartUI();
+ 
+ // Animation feedback
+ const btn = event.target;
+ btn.innerHTML = '<i class="fas fa-check"></i> เพิ่มแล้ว';
+ setTimeout(() => {
+ btn.innerHTML = '<i class="fas fa-plus"></i> เพิ่มลงตะกร้า';
+ }, 1000);
+ }
+ 
+ function updateQty(name, change) {
+ const item = cart.find(i => i.name === name);
+ if (item) {
+ item.qty += change;
+ if (item.qty <= 0) {
+ cart = cart.filter(i => i.name !== name);
+ }
+ updateCartUI();
+ }
+ }
+ 
+ function removeItem(name) {
+ cart = cart.filter(i => i.name !== name);
+ updateCartUI();
+ }
+ 
+ function clearCart() {
+ if (confirm('ต้องการเคลียร์ตะกร้าทั้งหมดใช่หรือไม่?')) {
+ cart = [];
+ updateCartUI();
+ }
+ }
+ 
+ function updateCartUI() {
+ const cartCount = document.getElementById('cartCount');
+ const cartItems = document.getElementById('cartItems');
+ const cartEmpty = document.getElementById('cartEmpty');
+ const cartFooter = document.getElementById('cartFooter');
+ const cartTotal = document.getElementById('cartTotal');
+ 
+ const totalQty = cart.reduce((sum, i) => sum + i.qty, 0);
+ const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+ 
+ cartCount.textContent = totalQty;
+ 
+ if (cart.length === 0) {
+ cartItems.innerHTML = '';
+ cartEmpty.style.display = 'block';
+ cartFooter.style.display = 'none';
+ } else {
+ cartEmpty.style.display = 'none';
+ cartFooter.style.display = 'flex';
+ 
+ cartItems.innerHTML = cart.map(item => `
+ <div class="cart-item">
+ <div class="cart-item-info">
+ <div class="cart-item-name">${item.name}</div>
+ <div class="cart-item-price">${item.price} บาท × ${item.qty} = ${(item.price * item.qty).toLocaleString()} บาท</div>
+ </div>
+ <div class="quantity-control">
+ <button class="qty-btn" onclick="updateQty('${item.name}', -1)">-</button>
+ <span class="qty-value">${item.qty}</span>
+ <button class="qty-btn" onclick="updateQty('${item.name}', 1)">+</button>
+ <button class="remove-btn" onclick="removeItem('${item.name}')">
+ <i class="fas fa-trash"></i>
+ </button>
+ </div>
+ </div>
+ `).join('');
+ 
+ // Calculate discount
+ let finalTotal = total;
+ let discountText = '';
+ 
+ if (total >= 500) {
+ discountText = '🚚 ส่งฟรี! (สั่งครบ 500 บาท)';
+ }
+ 
+ document.getElementById('discountInfo').innerHTML = discountText;
+ document.getElementById('discountInfo').style.display = discountText ? 'block' : 'none';
+ cartTotal.textContent = finalTotal.toLocaleString();
+ }
+ }
+ 
+ function toggleCart() {
+ document.getElementById('cartBar').classList.toggle('show');
+ }
+ 
+ // ============================================
+ // SEND ORDER
+ // ============================================
+ function sendLine() {
+ if (cart.length === 0) return;
+ 
+ const userName = "ลูกค้าหน้าเว็บ";
+ const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+ 
+ // Calculate points earned
+ const pointsEarned = Math.floor(total / 100);
+ userPoints += pointsEarned;
+ document.getElementById('userPoints').textContent = userPoints;
+ 
+ let orderDetails = "";
+ cart.forEach(i => orderDetails += `- ${i.name} (${i.qty} ชิ้น) = ${(i.price * i.qty).toLocaleString()} บาท\n`);
+
+ // Send data to Apps Script (GET)
+ const params = new URLSearchParams({
+ action: 'order',
+ customer: userName,
+ total: total,
+ items: JSON.stringify(cart),
+ points: pointsEarned
+ });
+
+ fetch(API_URL + '?' + params.toString())
+ .then(res => res.json())
+ .then(data => {
+ console.log("Response:", data);
+ if(data.status === "success") {
+ alert(`🎉 สั่งซื้อสำเร็จ!\n\n💰 ยอดรวม: ${total.toLocaleString()} บาท\n⭐ ได้รับ ${pointsEarned} แต้ม\n\nสต็อกถูกตัดแล้ว`);
+ cart = [];
+ updateCartUI();
+ toggleCart();
+ loadMenu(); // Reload to update stock display
+ } else {
+ alert("เกิดข้อผิดพลาด: " + data.message);
+ }
+ })
+ .catch(err => {
+ console.log("Error:", err);
+ alert("ส่งข้อมูลไม่สำเร็จ กรุณาลองใหม่");
+ });
+
+ // Open LINE
+ let text = `🥤 สั่งซื้อจาก 'เอาหยังบ่'\n\n`;
+ text += `👤 คุณ: ${userName}\n`;
+ text += `📋 รายการ:\n`;
+ text += orderDetails;
+ text += `------------------\n`;
+ text += `💰 ยอดรวม: ${total.toLocaleString()} บาท\n`;
+ if (total >= 500) text += `🚚 ส่งฟรี!\n`;
+ text += `⭐ ได้รับ ${pointsEarned} แต้ม`;
+ 
+ window.open(`https://line.me/R/msg/text/?${encodeURIComponent(text)}");
+ }
+
+ // เก็บข้อมูลเมนูไว้ในตัวแปร global เพื่อใช้ใน showCategory
+ let menuDataCache = {};
+
+ // Initialize
+ loadMenu();
+ updateCartUI();
+</script>
+</body>
+</html>

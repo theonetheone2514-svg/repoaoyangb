@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แอดมิน | เอาหยังบ่ Control Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0b0d14;
+            --card: #13151f;
+            --card2: #1a1d2a;
+            --border: #2a2d3e;
+            --primary: #4f8ef7;
+            --accent: #f07c3a;
+            --success: #2dce7a;
+            --danger: #f04a4a;
+            --warning: #f5c842;
+            --text: #e8eaf0;
+            --muted: #6b7080;
+            --sidebar-w: 240px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Kanit', sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+        /* ─── LOGIN ─── */
+        #loginScreen {
+            position: fixed; inset: 0; background: var(--bg);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 9999; flex-direction: column; gap: 0;
+        }
+        .login-box {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 24px; padding: 50px 40px; width: 380px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+            animation: slideUp 0.5s ease;
+        }
+        @keyframes slideUp { from { opacity:0; transform: translateY(30px); } to { opacity:1; transform:none; } }
+        .login-logo { font-size: 40px; text-align: center; margin-bottom: 8px; }
+        .login-title { text-align: center; font-size: 22px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+        .login-sub { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 30px; }
+        .login-input {
+            width: 100%; padding: 14px 16px; background: var(--bg);
+            border: 1px solid var(--border); border-radius: 12px;
+            color: var(--text); font-family: 'Kanit'; font-size: 15px;
+            margin-bottom: 14px; transition: border 0.2s;
+        }
+        .login-input:focus { outline: none; border-color: var(--primary); }
+        .btn-login {
+            width: 100%; padding: 14px; background: var(--primary); color: white;
+            border: none; border-radius: 12px; cursor: pointer;
+            font-family: 'Kanit'; font-size: 16px; font-weight: 600;
+            transition: 0.2s; letter-spacing: 0.5px;
+        }
+        .btn-login:hover { background: #3a7af0; transform: translateY(-1px); }
+        .login-error { color: var(--danger); font-size: 13px; text-align: center; margin-top: 10px; display: none; }
+
+        /* ─── SIDEBAR ─── */
+        .sidebar {
+            width: var(--sidebar-w); background: var(--card);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            position: fixed; top: 0; left: 0; height: 100vh;
+            z-index: 100; transition: 0.3s;
+        }
+        .sidebar-logo {
+            padding: 25px 20px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .sidebar-logo .brand { font-size: 18px; font-weight: 700; color: var(--primary); }
+        .sidebar-logo .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+        .nav-menu { padding: 15px 10px; flex: 1; overflow-y: auto; }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 15px; border-radius: 12px; cursor: pointer;
+            font-size: 14px; font-weight: 500; color: var(--muted);
+            transition: 0.2s; margin-bottom: 4px; border: none;
+            background: transparent; width: 100%; text-align: left;
+        }
+        .nav-item:hover { background: var(--card2); color: var(--text); }
+        .nav-item.active { background: rgba(79,142,247,0.15); color: var(--primary); }
+        .nav-item i { width: 18px; text-align: center; font-size: 15px; }
+        .nav-section { font-size: 10px; color: var(--muted); padding: 15px 15px 5px; letter-spacing: 1.5px; text-transform: uppercase; }
+        .sidebar-footer {
+            padding: 15px; border-top: 1px solid var(--border);
+            font-size: 12px; color: var(--muted);
+        }
+        #onlineStatus { display: flex; align-items: center; gap: 6px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+        /* ─── MAIN ─── */
+        .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+        .topbar {
+            padding: 18px 30px; background: var(--card);
+            border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 50;
+        }
+        .page-title { font-size: 20px; font-weight: 700; }
+        .topbar-actions { display: flex; gap: 10px; align-items: center; }
+        .btn-refresh {
+            padding: 8px 18px; background: var(--card2); border: 1px solid var(--border);
+            border-radius: 10px; color: var(--text); cursor: pointer;
+            font-family: 'Kanit'; font-size: 13px; transition: 0.2s;
+        }
+        .btn-refresh:hover { border-color: var(--primary); color: var(--primary); }
+        .refresh-timer { font-size: 12px; color: var(--muted); }
+
+        .content { padding: 25px 30px; flex: 1; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+        /* ─── STAT CARDS ─── */
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 28px; }
+        .stat-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 18px; padding: 22px 24px;
+            display: flex; align-items: center; gap: 18px;
+            transition: 0.3s; position: relative; overflow: hidden;
+        }
+        .stat-card::before {
+            content: ''; position: absolute; top: 0; left: 0;
+            width: 4px; height: 100%;
+        }
+        .stat-card.blue::before { background: var(--primary); }
+        .stat-card.orange::before { background: var(--accent); }
+        .stat-card.green::before { background: var(--success); }
+        .stat-card.red::before { background: var(--danger); }
+        .stat-icon { font-size: 28px; opacity: 0.8; }
+        .stat-info h4 { font-size: 12px; color: var(--muted); font-weight: 400; margin-bottom: 4px; }
+        .stat-value { font-size: 26px; font-weight: 700; }
+
+        /* ─── PANEL ─── */
+        .panel {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 18px; padding: 24px; margin-bottom: 22px;
+        }
+        .panel-title {
+            font-size: 16px; font-weight: 600; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 10px; color: var(--primary);
+        }
+
+        /* ─── TABLE ─── */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { padding: 12px 15px; background: var(--card2); color: var(--muted); font-weight: 500; text-align: left; font-size: 12px; letter-spacing: 0.5px; }
+        td { padding: 13px 15px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+
+        /* ─── BADGE ─── */
+        .badge { padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 500; display: inline-block; }
+        .badge-success { background: rgba(45,206,122,0.15); color: var(--success); }
+        .badge-warning { background: rgba(240,124,58,0.15); color: var(--accent); }
+        .badge-danger  { background: rgba(240,74,74,0.15);  color: var(--danger); }
+        .badge-info    { background: rgba(79,142,247,0.15); color: var(--primary); }
+        .badge-gray    { background: rgba(107,112,128,0.15); color: var(--muted); }
+
+        /* ─── SETTINGS ─── */
+        .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .setting-item { display: flex; flex-direction: column; gap: 8px; }
+        .setting-item label { font-size: 13px; color: var(--muted); }
+        .setting-input {
+            padding: 12px 14px; background: var(--bg); border: 1px solid var(--border);
+            border-radius: 10px; color: var(--text); font-family: 'Kanit'; font-size: 15px;
+            transition: 0.2s;
+        }
+        .setting-input:focus { outline: none; border-color: var(--primary); }
+        .btn-save {
+            margin-top: 20px; padding: 12px 28px; background: var(--primary);
+            color: white; border: none; border-radius: 12px; cursor: pointer;
+            font-family: 'Kanit'; font-weight: 600; font-size: 15px; transition: 0.2s;
+        }
+        .btn-save:hover { background: #3a7af0; }
+
+        /* ─── FILTERS ─── */
+        .filter-bar {
+            display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; align-items: center;
+        }
+        .filter-select, .filter-input {
+            padding: 9px 14px; background: var(--card2); border: 1px solid var(--border);
+            border-radius: 10px; color: var(--text); font-family: 'Kanit'; font-size: 13px;
+            cursor: pointer;
+        }
+        .filter-select:focus, .filter-input:focus { outline: none; border-color: var(--primary); }
+        .btn-filter {
+            padding: 9px 18px; background: var(--primary); color: white;
+            border: none; border-radius: 10px; cursor: pointer;
+            font-family: 'Kanit'; font-size: 13px; font-weight: 500;
+        }
+        .btn-export {
+            padding: 9px 18px; background: var(--success); color: white;
+            border: none; border-radius: 10px; cursor: pointer;
+            font-family: 'Kanit'; font-size: 13px; font-weight: 500;
+            margin-left: auto;
+        }
+
+        /* ─── STATUS BTN ─── */
+        .btn-status {
+            padding: 5px 12px; border: none; border-radius: 8px;
+            cursor: pointer; font-family: 'Kanit'; font-size: 12px; font-weight: 500;
+            transition: 0.2s;
+        }
+        .btn-status-next { background: rgba(79,142,247,0.2); color: var(--primary); }
+        .btn-status-next:hover { background: rgba(79,142,247,0.4); }
+
+        /* ─── CHART ─── */
+        .chart-wrap { position: relative; height: 200px; margin-top: 10px; }
+        .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 100%; padding-top: 20px; }
+        .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; height: 100%; justify-content: flex-end; }
+        .bar {
+            width: 100%; border-radius: 6px 6px 0 0;
+            background: linear-gradient(180deg, var(--primary), rgba(79,142,247,0.4));
+            transition: height 0.8s cubic-bezier(0.34,1.56,0.64,1);
+            min-height: 4px; cursor: pointer; position: relative;
+        }
+        .bar:hover { filter: brightness(1.3); }
+        .bar-label { font-size: 10px; color: var(--muted); white-space: nowrap; }
+        .bar-val { font-size: 10px; color: var(--text); font-weight: 600; }
+
+        /* ─── MEMBER SEARCH ─── */
+        .search-bar {
+            display: flex; gap: 10px; margin-bottom: 18px;
+        }
+        .search-input {
+            flex: 1; padding: 11px 16px; background: var(--card2);
+            border: 1px solid var(--border); border-radius: 12px;
+            color: var(--text); font-family: 'Kanit'; font-size: 14px;
+        }
+        .search-input:focus { outline: none; border-color: var(--primary); }
+        .btn-search {
+            padding: 11px 22px; background: var(--primary); color: white;
+            border: none; border-radius: 12px; cursor: pointer;
+            font-family: 'Kanit'; font-size: 14px; font-weight: 600;
+        }
+        .btn-edit-pts {
+            padding: 5px 12px; background: rgba(245,200,66,0.15); color: var(--warning);
+            border: 1px solid rgba(245,200,66,0.3); border-radius: 8px;
+            cursor: pointer; font-family: 'Kanit'; font-size: 12px;
+        }
+        .btn-edit-pts:hover { background: rgba(245,200,66,0.3); }
+
+        /* ─── MODAL ─── */
+        .modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            display: none; justify-content: center; align-items: center; z-index: 5000;
+        }
+        .modal.show { display: flex; }
+        .modal-box {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 20px; padding: 30px; width: 380px; max-width: 95%;
+            animation: slideUp 0.3s ease;
+        }
+        .modal-box h3 { font-size: 18px; margin-bottom: 8px; color: var(--primary); }
+        .modal-box p { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+        .modal-input {
+            width: 100%; padding: 12px; background: var(--bg);
+            border: 1px solid var(--border); border-radius: 10px;
+            color: var(--text); font-family: 'Kanit'; font-size: 15px; margin-bottom: 16px;
+        }
+        .modal-btns { display: flex; gap: 10px; }
+        .btn-confirm { flex:1; padding: 11px; background: var(--primary); color: white; border: none; border-radius: 10px; cursor: pointer; font-family: 'Kanit'; font-weight: 600; }
+        .btn-cancel  { flex:1; padding: 11px; background: var(--card2); color: var(--muted); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; font-family: 'Kanit'; }
+
+        /* ─── MAPS LINK ─── */
+        .maps-link { color: var(--primary); text-decoration: none; font-size: 13px; }
+        .maps-link:hover { text-decoration: underline; }
+
+        /* ─── LOADING ─── */
+        .loading-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+            display: none; justify-content: center; align-items: center;
+            z-index: 8000; flex-direction: column; gap: 15px;
+        }
+        .spinner {
+            width: 40px; height: 40px; border: 3px solid var(--border);
+            border-top-color: var(--primary); border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: none; }
+            .main { margin-left: 0; }
+            .content { padding: 15px; }
+        }
+
+        .empty-state { text-align: center; padding: 40px; color: var(--muted); }
+        .empty-state i { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+    </style>
+</head>
+<body>
+
+<!-- ─── LOADING ─── -->
+<div id="loading" class="loading-overlay">
+    <div class="spinner"></div>
+    <span style="color:var(--muted); font-size:14px;">กำลังประมวลผล...</span>
+</div>
+
+<!-- ─── LOGIN ─── -->
+<div id="loginScreen">
+    <div class="login-box">
+        <div class="login-logo">🛡️</div>
+        <div class="login-title">Admin Control Center</div>
+        <div class="login-sub">เอาหยังบ่ | ระบบจัดการหลังบ้าน</div>
+        <input type="text" id="adminUser" class="login-input" placeholder="Username">
+        <input type="password" id="adminPass" class="login-input" placeholder="Password" onkeydown="if(event.key==='Enter') doLogin()">
+        <button class="btn-login" onclick="doLogin()"><i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบ</button>
+        <div class="login-error" id="loginError">Username หรือ Password ไม่ถูกต้อง</div>
+    </div>
+</div>
+
+<!-- ─── SIDEBAR ─── -->
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+        <div class="brand">🍲 เอาหยังบ่</div>
+        <div class="sub">Admin Panel v2.0</div>
+    </div>
+    <div class="nav-menu">
+        <div class="nav-section">ภาพรวม</div>
+        <button class="nav-item active" onclick="switchTab('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
+        <div class="nav-section">จัดการ</div>
+        <button class="nav-item" onclick="switchTab('orders')"><i class="fas fa-shopping-bag"></i> ออเดอร์ทั้งหมด</button>
+        <button class="nav-item" onclick="switchTab('members')"><i class="fas fa-users"></i> สมาชิก</button>
+        <button class="nav-item" onclick="switchTab('stores')"><i class="fas fa-store"></i> ร้านค้า</button>
+        <button class="nav-item" onclick="switchTab('riders')"><i class="fas fa-motorcycle"></i> ไรเดอร์</button>
+        <div class="nav-section">ระบบ</div>
+        <button class="nav-item" onclick="switchTab('settings')"><i class="fas fa-sliders-h"></i> ตั้งค่า</button>
+        <button class="nav-item" onclick="doLogout()" style="color:var(--danger);"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</button>
+    </div>
+    <div class="sidebar-footer">
+        <div id="onlineStatus"><div class="dot"></div> ระบบออนไลน์</div>
+        <div style="margin-top:6px;" id="lastRefresh">-</div>
+    </div>
+</div>
+
+<!-- ─── MAIN ─── -->
+<div class="main" id="mainArea" style="display:none;">
+    <div class="topbar">
+        <div class="page-title" id="pageTitle">Dashboard</div>
+        <div class="topbar-actions">
+            <span class="refresh-timer" id="timerDisplay">รีเฟรชใน 30s</span>
+            <button class="btn-refresh" onclick="refreshCurrentTab()"><i class="fas fa-sync-alt"></i> รีเฟรช</button>
+        </div>
+    </div>
+
+    <div class="content">
+
+        <!-- ── DASHBOARD TAB ── -->
+        <div class="tab-content active" id="tab-dashboard">
+            <div class="stat-grid">
+                <div class="stat-card blue">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-info"><h4>ยอดขายรวม (Gross)</h4><div class="stat-value" id="statSales">-</div></div>
+                </div>
+                <div class="stat-card orange">
+                    <div class="stat-icon">📈</div>
+                    <div class="stat-info"><h4>กำไรแพลตฟอร์ม (15%)</h4><div class="stat-value" id="statProfit">-</div></div>
+                </div>
+                <div class="stat-card green">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info"><h4>งานสำเร็จ</h4><div class="stat-value" id="statCompleted">-</div></div>
+                </div>
+                <div class="stat-card red">
+                    <div class="stat-icon">🛵</div>
+                    <div class="stat-info"><h4>ไรเดอร์ในระบบ</h4><div class="stat-value" id="statRiders">-</div></div>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:2fr 1fr; gap:20px;">
+                <div class="panel">
+                    <div class="panel-title"><i class="fas fa-chart-bar"></i> ยอดขาย 7 วันล่าสุด</div>
+                    <div class="bar-chart" id="salesChart">
+                        <div class="empty-state" style="width:100%;"><i class="fas fa-chart-bar"></i><br>กำลังโหลดข้อมูล...</div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-title"><i class="fas fa-clock"></i> ออเดอร์ล่าสุด</div>
+                    <div id="recentOrders" style="font-size:13px; line-height:2;">กำลังโหลด...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── ORDERS TAB ── -->
+        <div class="tab-content" id="tab-orders">
+            <div class="filter-bar">
+                <select class="filter-select" id="filterStatus" onchange="filterOrders()">
+                    <option value="">ทุกสถานะ</option>
+                    <option value="รอดำเนินการ">รอดำเนินการ</option>
+                    <option value="กำลังปรุง">กำลังปรุง</option>
+                    <option value="พร้อมจัดส่ง">พร้อมจัดส่ง</option>
+                    <option value="กำลังจัดส่ง">กำลังจัดส่ง</option>
+                    <option value="ส่งสำเร็จ">ส่งสำเร็จ</option>
+                </select>
+                <input type="date" class="filter-input" id="filterDate" onchange="filterOrders()">
+                <button class="btn-filter" onclick="filterOrders()"><i class="fas fa-filter"></i> กรอง</button>
+                <button class="btn-export" onclick="exportCSV('orders')"><i class="fas fa-download"></i> Export CSV</button>
+            </div>
+            <div class="panel">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th><th>วันที่/เวลา</th><th>ลูกค้า</th><th>รายการ</th>
+                                <th>ยอด</th><th>ชำระ</th><th>สถานะ</th><th>พิกัด</th><th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTable"><tr><td colspan="9" class="empty-state">กำลังโหลด...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── MEMBERS TAB ── -->
+        <div class="tab-content" id="tab-members">
+            <div class="search-bar">
+                <input type="tel" class="search-input" id="memberSearch" placeholder="ค้นหาด้วยเบอร์โทรศัพท์..." maxlength="10" onkeydown="if(event.key==='Enter') searchMember()">
+                <button class="btn-search" onclick="searchMember()"><i class="fas fa-search"></i> ค้นหา</button>
+                <button class="btn-export" onclick="exportCSV('members')"><i class="fas fa-download"></i> Export CSV</button>
+            </div>
+            <div class="panel">
+                <div class="panel-title"><i class="fas fa-users"></i> รายชื่อสมาชิกทั้งหมด</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>เบอร์โทร</th><th>ชื่อ</th><th>แต้มสะสม</th><th>วันสมัคร</th><th>ออเดอร์ล่าสุด</th><th>Action</th></tr></thead>
+                        <tbody id="membersTable"><tr><td colspan="6" class="empty-state">กำลังโหลด...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── STORES TAB ── -->
+        <div class="tab-content" id="tab-stores">
+            <div class="filter-bar">
+                <button class="btn-filter" onclick="openAddStoreModal()"><i class="fas fa-plus"></i> เพิ่มร้านค้า</button>
+            </div>
+            <div class="panel">
+                <div class="panel-title"><i class="fas fa-store"></i> ร้านค้าทั้งหมด</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>รหัสร้าน</th><th>ชื่อร้าน</th><th>เบอร์โทร</th><th>Action</th></tr></thead>
+                        <tbody id="storesTable"><tr><td colspan="4" class="empty-state">กำลังโหลด...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── RIDERS TAB ── -->
+        <div class="tab-content" id="tab-riders">
+            <div class="filter-bar">
+                <button class="btn-export" onclick="exportCSV('riders')"><i class="fas fa-download"></i> Export CSV</button>
+            </div>
+            <div class="panel">
+                <div class="panel-title"><i class="fas fa-motorcycle"></i> ไรเดอร์ทั้งหมด</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>เบอร์โทร</th><th>ชื่อ</th><th>รายได้สะสม</th><th>งานในมือ</th><th>สถานะ</th></tr></thead>
+                        <tbody id="ridersTable"><tr><td colspan="5" class="empty-state">กำลังโหลด...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── SETTINGS TAB ── -->
+        <div class="tab-content" id="tab-settings">
+            <div class="panel">
+                <div class="panel-title"><i class="fas fa-sliders-h"></i> Global Settings</div>
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <label>ค่าส่ง (บาท)</label>
+                        <input type="number" class="setting-input" id="setDelFee" value="10">
+                    </div>
+                    <div class="setting-item">
+                        <label>รัศมีจัดส่ง (กม.)</label>
+                        <input type="number" step="0.1" class="setting-input" id="setRadius" value="4.5">
+                    </div>
+                    <div class="setting-item">
+                        <label>Markup ราคา (%)</label>
+                        <input type="number" class="setting-input" id="setMarkup" value="15">
+                    </div>
+                </div>
+                <button class="btn-save" onclick="saveSettings()"><i class="fas fa-save"></i> บันทึกการตั้งค่า</button>
+            </div>
+            <div class="panel">
+                <div class="panel-title"><i class="fas fa-shield-alt"></i> ความปลอดภัย</div>
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <label>Username ใหม่</label>
+                        <input type="text" class="setting-input" id="newUser" placeholder="กรอก Username ใหม่">
+                    </div>
+                    <div class="setting-item">
+                        <label>Password ใหม่</label>
+                        <input type="password" class="setting-input" id="newPass" placeholder="กรอก Password ใหม่">
+                    </div>
+                </div>
+                <button class="btn-save" style="background:var(--warning); margin-top:20px;" onclick="changeCredentials()"><i class="fas fa-key"></i> เปลี่ยนรหัสผ่าน</button>
+            </div>
+        </div>
+
+    </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ─── MODAL: แก้แต้ม ─── -->
+<div class="modal" id="editPointsModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-star"></i> แก้ไขแต้มสมาชิก</h3>
+        <p id="editPointsDesc">กำลังแก้ไขแต้มของ...</p>
+        <input type="number" class="modal-input" id="newPoints" placeholder="แต้มใหม่">
+        <div class="modal-btns">
+            <button class="btn-cancel" onclick="closeModal('editPointsModal')">ยกเลิก</button>
+            <button class="btn-confirm" onclick="savePoints()">บันทึก</button>
+        </div>
+    </div>
+</div>
+
+<!-- ─── MODAL: เพิ่มร้านค้า ─── -->
+<div class="modal" id="addStoreModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-store"></i> เพิ่มร้านค้าใหม่</h3>
+        <p>กรอกข้อมูลร้านค้าที่ต้องการเพิ่ม</p>
+        <input type="text" class="modal-input" id="newStoreName" placeholder="ชื่อร้านค้า">
+        <input type="tel" class="modal-input" id="newStorePhone" placeholder="เบอร์โทรศัพท์ 10 หลัก" maxlength="10">
+        <div class="modal-btns">
+            <button class="btn-cancel" onclick="closeModal('addStoreModal')">ยกเลิก</button>
+            <button class="btn-confirm" onclick="addStore()">เพิ่มร้านค้า</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7JkH4FaObGM3DBLl8574VEEtsHuG_HYiinHt3cvFZSUvOGupvQy_ZsQsFHhmRuDV78w/exec";
+
+// ─── AUTH (localStorage เก็บ credentials แบบง่าย) ───
+const DEFAULT_USER = "admin";
+const DEFAULT_PASS = "aoyangbor2025";
+
+let state = {
+    currentTab: 'dashboard',
+    orders: [], members: [], riders: [], stores: [],
+    editingPhone: null,
+    timerSeconds: 30,
+    timerInterval: null,
+    refreshInterval: null
+};
+
+function doLogin() {
+    const u = document.getElementById('adminUser').value.trim();
+    const p = document.getElementById('adminPass').value.trim();
+    const savedUser = localStorage.getItem('admin_user') || DEFAULT_USER;
+    const savedPass = localStorage.getItem('admin_pass') || DEFAULT_PASS;
+    if (u === savedUser && p === savedPass) {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainArea').style.display = 'flex';
+        init();
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+    }
+}
+
+function doLogout() {
+    document.getElementById('mainArea').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('adminUser').value = '';
+    document.getElementById('adminPass').value = '';
+    clearInterval(state.refreshInterval);
+    clearInterval(state.timerInterval);
+}
+
+function changeCredentials() {
+    const u = document.getElementById('newUser').value.trim();
+    const p = document.getElementById('newPass').value.trim();
+    if (!u || !p) return alert("กรุณากรอก Username และ Password ใหม่");
+    localStorage.setItem('admin_user', u);
+    localStorage.setItem('admin_pass', p);
+    alert("เปลี่ยนรหัสผ่านสำเร็จ! กรุณา Login ใหม่");
+    doLogout();
+}
+
+// ─── INIT ───
+async function init() {
+    await refreshCurrentTab();
+    startAutoRefresh();
+    startTimer();
+}
+
+function showLoading(s) { document.getElementById('loading').style.display = s ? 'flex' : 'none'; }
+
+function switchTab(tab) {
+    state.currentTab = tab;
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(el => {
+        if (el.getAttribute('onclick') && el.getAttribute('onclick').includes(`'${tab}'`)) el.classList.add('active');
+    });
+    const titles = { dashboard:'Dashboard', orders:'ออเดอร์ทั้งหมด', members:'จัดการสมาชิก', stores:'จัดการร้านค้า', riders:'ไรเดอร์', settings:'ตั้งค่าระบบ' };
+    document.getElementById('pageTitle').innerText = titles[tab] || tab;
+    refreshCurrentTab();
+}
+
+async function refreshCurrentTab() {
+    const tab = state.currentTab;
+    if (tab === 'dashboard') await loadDashboard();
+    else if (tab === 'orders')  await loadOrders();
+    else if (tab === 'members') await loadMembers();
+    else if (tab === 'stores')  await loadStores();
+    else if (tab === 'riders')  await loadRiders();
+    document.getElementById('lastRefresh').innerText = 'อัปเดต: ' + new Date().toLocaleTimeString('th-TH');
+    resetTimer();
+}
+
+// ─── TIMER ───
+function startTimer() {
+    state.timerInterval = setInterval(() => {
+        state.timerSeconds--;
+        document.getElementById('timerDisplay').innerText = `รีเฟรชใน ${state.timerSeconds}s`;
+        if (state.timerSeconds <= 0) { resetTimer(); refreshCurrentTab(); }
+    }, 1000);
+}
+function resetTimer() { state.timerSeconds = 30; }
+
+function startAutoRefresh() {
+    state.refreshInterval = setInterval(() => refreshCurrentTab(), 30000);
+}
+
+// ─── DASHBOARD ───
+async function loadDashboard() {
+    showLoading(true);
+    try {
+        const [sumRes, riderRes, orderRes] = await Promise.all([
+            fetch(`${SCRIPT_URL}?action=getAdminSummary`),
+            fetch(`${SCRIPT_URL}?action=getAllRiders`),
+            fetch(`${SCRIPT_URL}?action=getPendingOrders`)
+        ]);
+        const summary = await sumRes.json();
+        const riders  = await riderRes.json();
+        const orders  = await orderRes.json();
+
+        document.getElementById('statSales').innerText     = `${(summary.totalSales||0).toLocaleString()} ฿`;
+        document.getElementById('statProfit').innerText    = `${Math.round(summary.netProfit||0).toLocaleString()} ฿`;
+        document.getElementById('statCompleted').innerText = `${summary.completedJobs||0} งาน`;
+        document.getElementById('statRiders').innerText    = `${Array.isArray(riders)?riders.length:0} คน`;
+
+        renderRecentOrders(Array.isArray(orders) ? orders.slice(-5).reverse() : []);
+        renderMockChart();
+    } catch(e) { console.error("Dashboard error", e); }
+    showLoading(false);
+}
+
+function renderRecentOrders(orders) {
+    const el = document.getElementById('recentOrders');
+    if (!orders.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><br>ยังไม่มีออเดอร์</div>'; return; }
+    el.innerHTML = orders.map(o => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+            <span>#${o.row} — ${(o.itemsText||'').substring(0,20)}${(o.itemsText||'').length>20?'...':''}</span>
+            <span class="badge ${statusBadgeClass(o.status)}">${o.status}</span>
+        </div>`).join('');
+}
+
+function renderMockChart() {
+    const days = ['จ','อ','พ','พฤ','ศ','ส','อา'];
+    const vals = Array.from({length:7}, () => Math.floor(Math.random()*500+100));
+    const max  = Math.max(...vals);
+    const chart = document.getElementById('salesChart');
+    chart.innerHTML = vals.map((v,i) => `
+        <div class="bar-col">
+            <div class="bar-val">${v}</div>
+            <div class="bar" style="height:${(v/max)*140}px;" title="${days[i]}: ${v} บาท"></div>
+            <div class="bar-label">${days[i]}</div>
+        </div>`).join('');
+}
+
+// ─── ORDERS ───
+async function loadOrders() {
+    showLoading(true);
+    try {
+        const res = await fetch(`${SCRIPT_URL}?action=getPendingOrders`);
+        const data = await res.json();
+        state.orders = Array.isArray(data) ? data : [];
+        renderOrdersTable(state.orders);
+    } catch(e) { console.error("Orders error", e); }
+    showLoading(false);
+}
+
+function renderOrdersTable(orders) {
+    const tbody = document.getElementById('ordersTable');
+    if (!orders.length) {
+        tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><i class="fas fa-inbox"></i><br>ไม่มีออเดอร์</div></td></tr>';
+        return;
+    }
+    tbody.innerHTML = orders.map(o => {
+        const statusNext = nextStatus(o.status);
+        return `<tr>
+            <td><b>#${o.row}</b></td>
+            <td style="font-size:12px; color:var(--muted);">-</td>
+            <td>${o.phone||'-'}</td>
+            <td style="max-width:180px; font-size:13px;">${o.itemsText||'-'}</td>
+            <td><b>${o.total||0} ฿</b></td>
+            <td>-</td>
+            <td><span class="badge ${statusBadgeClass(o.status)}">${o.status||'-'}</span></td>
+            <td>-</td>
+            <td>${statusNext ? `<button class="btn-status btn-status-next" onclick="updateOrderStatus(${o.row},'${statusNext}')">${statusNext}</button>` : '-'}</td>
+        </tr>`;
+    }).join('');
+}
+
+function filterOrders() {
+    const st   = document.getElementById('filterStatus').value;
+    const date = document.getElementById('filterDate').value;
+    let filtered = state.orders;
+    if (st)   filtered = filtered.filter(o => o.status === st);
+    renderOrdersTable(filtered);
+}
+
+async function updateOrderStatus(row, newStatus) {
+    showLoading(true);
+    try {
+        await fetch(`${SCRIPT_URL}?action=updateOrderStatus&row=${row}&status=${encodeURIComponent(newStatus)}`);
+        await loadOrders();
+    } catch(e) { alert("อัปเดตสถานะล้มเหลว"); }
+    showLoading(false);
+}
+
+function nextStatus(s) {
+    const map = { 'รอดำเนินการ':'กำลังปรุง', 'กำลังปรุง':'พร้อมจัดส่ง', 'พร้อมจัดส่ง':'กำลังจัดส่ง', 'กำลังจัดส่ง':'ส่งสำเร็จ' };
+    return map[s] || null;
+}
+
+function statusBadgeClass(s) {
+    const map = { 'รอดำเนินการ':'badge-info', 'กำลังปรุง':'badge-warning', 'พร้อมจัดส่ง':'badge-warning', 'กำลังจัดส่ง':'badge-warning', 'ส่งสำเร็จ':'badge-success', 'ยกเลิก':'badge-danger' };
+    return map[s] || 'badge-gray';
+}
+
+// ─── MEMBERS ───
+async function loadMembers() {
+    showLoading(true);
+    try {
+        const res = await fetch(`${SCRIPT_URL}?action=getAllMembers`);
+        const data = await res.json();
+        state.members = Array.isArray(data) ? data : [];
+        renderMembersTable(state.members);
+    } catch(e) { console.error("Members error", e); }
+    showLoading(false);
+}
+
+function renderMembersTable(members) {
+    const tbody = document.getElementById('membersTable');
+    if (!members.length) {
+        tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="fas fa-users"></i><br>ไม่มีข้อมูลสมาชิก</div></td></tr>';
+        return;
+    }
+    tbody.innerHTML = members.map(m => `<tr>
+        <td>${m.phone||'-'}</td>
+        <td>${m.name||'-'}</td>
+        <td><b style="color:var(--warning);">${m.points||0}</b> แต้ม</td>
+        <td style="font-size:12px; color:var(--muted);">${m.joinDate||'-'}</td>
+        <td style="font-size:12px; color:var(--muted);">${m.lastOrder||'-'}</td>
+        <td><button class="btn-edit-pts" onclick="openEditPoints('${m.phone}','${m.name}',${m.points||0})"><i class="fas fa-edit"></i> แก้แต้ม</button></td>
+    </tr>`).join('');
+}
+
+async function searchMember() {
+    const phone = document.getElementById('memberSearch').value.trim();
+    if (!phone) { renderMembersTable(state.members); return; }
+    showLoading(true);
+    try {
+        const res = await fetch(`${SCRIPT_URL}?action=getMember&phone=${phone}`);
+        const data = await res.json();
+        if (data.found) {
+            renderMembersTable([{ phone, name: data.name, points: data.points, joinDate: data.joinDate, lastOrder: data.lastOrder }]);
+        } else {
+            document.getElementById('membersTable').innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="fas fa-user-slash"></i><br>ไม่พบสมาชิกเบอร์ ${phone}</div></td></tr>`;
+        }
+    } catch(e) { alert("ค้นหาล้มเหลว"); }
+    showLoading(false);
+}
+
+function openEditPoints(phone, name, currentPts) {
+    state.editingPhone = phone;
+    document.getElementById('editPointsDesc').innerText = `แก้ไขแต้มของ ${name} (${phone}) — ปัจจุบัน: ${currentPts} แต้ม`;
+    document.getElementById('newPoints').value = currentPts;
+    document.getElementById('editPointsModal').classList.add('show');
+}
+
+async function savePoints() {
+    const newPts = parseInt(document.getElementById('newPoints').value);
+    if (isNaN(newPts) || newPts < 0) return alert("กรุณากรอกแต้มให้ถูกต้อง");
+    showLoading(true);
+    try {
+        await fetch(`${SCRIPT_URL}?action=setMemberPoints&phone=${state.editingPhone}&points=${newPts}`);
+        closeModal('editPointsModal');
+        await loadMembers();
+        alert("แก้ไขแต้มสำเร็จ");
+    } catch(e) { alert("บันทึกล้มเหลว"); }
+    showLoading(false);
+}
+
+// ─── STORES ───
+async function loadStores() {
+    showLoading(true);
+    try {
+        const res = await fetch(`${SCRIPT_URL}?action=getAllStores`);
+        const data = await res.json();
+        state.stores = Array.isArray(data) ? data : [];
+        renderStoresTable(state.stores);
+    } catch(e) { console.error("Stores error", e); }
+    showLoading(false);
+}
+
+function renderStoresTable(stores) {
+    const tbody = document.getElementById('storesTable');
+    if (!stores.length) {
+        tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><i class="fas fa-store-slash"></i><br>ไม่มีร้านค้า</div></td></tr>';
+        return;
+    }
+    tbody.innerHTML = stores.map(s => `<tr>
+        <td><b>${s.storeId||'-'}</b></td>
+        <td>${s.storeName||'-'}</td>
+        <td>${s.phone||'-'}</td>
+        <td><span class="badge badge-success">ใช้งาน</span></td>
+    </tr>`).join('');
+}
+
+function openAddStoreModal() { document.getElementById('addStoreModal').classList.add('show'); }
+
+async function addStore() {
+    const name  = document.getElementById('newStoreName').value.trim();
+    const phone = document.getElementById('newStorePhone').value.trim();
+    if (!name || phone.length !== 10) return alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+    showLoading(true);
+    try {
+        const res = await fetch(`${SCRIPT_URL}?action=registerMerchant&storeName=${encodeURIComponent(name)}&phone=${phone}`);
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message);
+            closeModal('addStoreModal');
+            await loadStores();
+        } else { alert(data.message); }
+    } catch(e) { alert("เพิ่มร้านค้าล้มเหลว"); }
+    showLoading(false);
+}
+
+// ─── RIDERS ───
+async function loadRiders() {
+    showLoading(true);
+    try {
+        const res = await fetch(`${SCRIPT_URL}?action=getAllRiders`);
+        const data = await res.json();
+        state.riders = Array.isArray(data) ? data : [];
+        const tbody = document.getElementById('ridersTable');
+        if (!state.riders.length) {
+            tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fas fa-motorcycle"></i><br>ยังไม่มีไรเดอร์</div></td></tr>';
+        } else {
+            tbody.innerHTML = state.riders.map(r => `<tr>
+                <td>${r.phone||'-'}</td>
+                <td>${r.name||'-'}</td>
+                <td><b style="color:var(--success);">${r.earnings||0} ฿</b></td>
+                <td>${r.jobs||0}</td>
+                <td>${(r.jobs||0) > 0 ? `<span class="badge badge-warning">${r.jobs} งานในมือ</span>` : '<span class="badge badge-success">ว่าง</span>'}</td>
+            </tr>`).join('');
+        }
+    } catch(e) { console.error("Riders error", e); }
+    showLoading(false);
+}
+
+// ─── SETTINGS ───
+async function saveSettings() {
+    showLoading(true);
+    const fee    = document.getElementById('setDelFee').value;
+    const radius = document.getElementById('setRadius').value;
+    const markup = document.getElementById('setMarkup').value;
+    try {
+        const res = await fetch(`${SCRIPT_URL}?action=updateSettings&fee=${fee}&radius=${radius}&markup=${markup}`);
+        const data = await res.json();
+        alert(data.success ? "บันทึกการตั้งค่าเรียบร้อย!" : "เกิดข้อผิดพลาด: " + data.message);
+    } catch(e) { alert("บันทึกล้มเหลว"); }
+    showLoading(false);
+}
+
+// ─── EXPORT CSV ───
+function exportCSV(type) {
+    let rows = [], headers = [], filename = '';
+    if (type === 'orders') {
+        headers = ['Row','Phone','Items','Total','Status'];
+        rows = state.orders.map(o => [o.row, o.phone, `"${o.itemsText}"`, o.total, o.status]);
+        filename = 'orders.csv';
+    } else if (type === 'members') {
+        headers = ['Phone','Name','Points','JoinDate','LastOrder'];
+        rows = state.members.map(m => [m.phone, m.name, m.points, m.joinDate, m.lastOrder]);
+        filename = 'members.csv';
+    } else if (type === 'riders') {
+        headers = ['Phone','Name','Earnings','Jobs'];
+        rows = state.riders.map(r => [r.phone, r.name, r.earnings, r.jobs]);
+        filename = 'riders.csv';
+    }
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+}
+
+// ─── MODAL UTILS ───
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if(e.target === m) m.classList.remove('show'); }));
+</script>
+</body>
+</html>

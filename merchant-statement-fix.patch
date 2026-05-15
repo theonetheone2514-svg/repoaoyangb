@@ -1,0 +1,100 @@
+--- ไฟล์ Google Apps Script ก่อนแก้ไข (ส่วน doGet)
++++ ไฟล์ Google Apps Script หลังแก้ไข (ส่วน doGet)
+@@
+ if (action === 'updateOrderStatus') { return updateOrderStatus(e.parameter); }
+ if (action === 'updateProduct') { return updateProduct(e.parameter); }
+ if (action === 'getRiderData') { return getRiderData(e.parameter.phone); }
+ if (action === 'registerRider') { return registerRider(e.parameter); }
+ if (action === 'acceptJob') { return acceptJob(e.parameter); }
+ if (action === 'completeJob') { return completeJob(e.parameter); }
+ if (action === 'getAllRiders') { return getAllRiders(); }
+ if (action === 'updateSettings') { return updateSettings(e.parameter); }
+ if (action === 'getAdminSummary') { return getAdminSummary(); }
+ if (action === 'registerMerchant') { return registerMerchant(e.parameter); }
+ if (action === 'getPendingOrders') { return getPendingOrders(); } // ✅ เพิ่มให้ครบ
+ if (action === 'markAsArrived') { return markAsArrived(e.parameter); }
++
++// แก้ไขปัญหาดึงข้อมูล Statement มาไม่ได้
++if (action === 'getMerchantStatement') { return getMerchantStatement(e.parameter); }
++
+ return getMenu();
+ }
+ 
+ --- ไฟล์ Google Apps Script ก่อนแก้ไข (ท้ายไฟล์)
++++ ไฟล์ Google Apps Script หลังแก้ไข (ท้ายไฟล์)
+@@
+ function getAdminSummary() {
+ }
+ 
+ // --- เพิ่มฟังก์ชันนี้ลงไปที่ท้ายไฟล์ .gs ครับ ---
+ function markAsArrived(params) {
+ }
+ 
+ function jsonResponse(data) {
+ }
+ 
+ function doPost(e) {
+ }
+ 
++// ฟังก์ชันดึงข้อมูล Statement ของร้านค้า (สำหรับ doGet)
++function getMerchantStatement(params) {
++ try {
++ var storeId = params.storeId ? params.storeId.toString().trim() : "";
++ var targetDate = params.date ? params.date.toString().trim() : "";
++ if (!storeId) return jsonResponse({ success: false, message: "ERROR: ขาด storeId" });
++ if (!targetDate) return jsonResponse({ success: false, message: "ERROR: ขาด targetDate" });
++
++ var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('ออเดอร์');
++ if (!sheet) return jsonResponse({ success: false, message: "ERROR: ไม่พบชีท 'ออเดอร์'" });
++
++ var data = sheet.getDataRange().getValues();
++ var statement = [];
++
++ for (var i = 1; i < data.length; i++) {
++ var rowDateValue = data[i][0];
++ var formattedDate = "";
++
++ try {
++ if (rowDateValue instanceof Date) {
++ formattedDate = Utilities.formatDate(rowDateValue, "GMT+7", "yyyy-MM-dd");
++ } else if (typeof rowDateValue === 'string' && rowDateValue !== "") {
++ var dateStr = rowDateValue.trim();
++ if (dateStr.includes('/')) {
++ var parts = dateStr.split(',')[0].trim().split('/');
++ if(parts.length === 3) {
++ var day = parts[0].padStart(2, '0');
++ var month = parts[1].padStart(2, '0');
++ var year = parts[2];
++ if (year.length === 2) year = "20" + year;
++ formattedDate = year + '-' + month + '-' + day;
++ }
++ } else if (dateStr.includes('-')) {
++ formattedDate = dateStr.split(' ')[0].trim();
++ }
++ }
++ } catch (e) { formattedDate = ""; }
++
++ var status = data[i][5] ? data[i][5].toString().trim() : "";
++ var storeIdInSheet = data[i][10] ? data[i][10].toString().trim() : "";
++
++ // --- ปรับเงื่อนไขให้ยืดหยุ่นขึ้นเพื่อให้ข้อมูลโชว์ ---
++ // ตรวจสอบว่า รหัสร้านตรงกัน และ วันที่ตรงกัน (ถ้า status เป็น 'ส่งสำเร็จ')
++ if (storeIdInSheet === storeId && formattedDate === targetDate && status === 'ส่งสำเร็จ') {
++ var totalAmount = parseFloat(data[i][4]) || 0;
++ var deliveryFee = 10;
++ var foodPrice = Math.max(0, totalAmount - deliveryFee);
++ var netIncome = foodPrice * 0.85;
++
++ statement.push({
++ time: (rowDateValue instanceof Date) ? Utilities.formatDate(rowDateValue, "GMT+7", "HH:mm") : (rowDateValue.toString().split(',')[1] || '--:--').trim(),
++ items: data[i][3] || 'ไม่ระบุรายการ',
++ foodPrice: foodPrice,
++ netIncome: netIncome
++ });
++ }
++ }
++ return jsonResponse({ success: true, data: statement });
++ } catch (err) {
++ return jsonResponse({ success: false, message: "CRITICAL ERROR: " + err.toString() });
++ }
+ }

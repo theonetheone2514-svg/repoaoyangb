@@ -1,0 +1,40 @@
+{
+  "name": "เอาหยังบ่",
+  "short_name": "เอาหยังบ่",
+  "description": "สั่งอาหารออนไลน์ + สะสมแต้ม ร้านเอาหยังบ่",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fdfbf7",
+  "theme_color": "#2c3e50",
+  "lang": "th",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3448/3448608.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3448/3448608.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "หน้าร้านค้า",
+      "short_name": "Merchant",
+      "url": "/merchant.html",
+      "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/3448/3448608.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "หน้าไรเดอร์",
+      "short_name": "Rider",
+      "url": "/rider.html",
+      "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/2972/2972165.png", "sizes": "96x96" }]
+    }
+  ]
+}

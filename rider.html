@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ไรเดอร์ | เอาหยังบ่ Delivery</title>
+    <link rel="manifest" href="manifest.json">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(() => console.log('PWA: SW registered'))
+                    .catch(err => console.log('PWA: SW failed', err));
+            });
+        }
+    </script>
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="เอาหยังบ่ Rider">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2972/2972165.png">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #f0f2f5; --primary: #2c3e50; --accent: #e67e22;
+            --success: #27ae60; --danger: #c0392b; --info: #2980b9;
+            --white: #ffffff; --gray: #7f8c8d; --card-radius: 18px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Kanit', sans-serif; background: var(--bg); color: #333; }
+
+        /* NAV */
+        nav {
+            background: var(--primary); color: white;
+            padding: 14px 18px; display: flex; justify-content: space-between;
+            align-items: center; position: sticky; top: 0; z-index: 1000;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+        }
+        .nav-logo { font-size: 17px; font-weight: 600; }
+        .nav-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+        .rider-name { font-size: 12px; opacity: 0.85; }
+
+        /* ZONE BADGE in nav */
+        .zone-badge-nav {
+            background: rgba(255,255,255,0.2); padding: 4px 10px;
+            border-radius: 14px; font-size: 12px; cursor: pointer;
+            display: flex; align-items: center; gap: 5px; transition: 0.2s;
+        }
+        .zone-badge-nav:hover { background: rgba(255,255,255,0.3); }
+        .zone-dot { width: 7px; height: 7px; border-radius: 50%; background: #888; }
+        .zone-dot.on { background: #2ecc71; box-shadow: 0 0 5px #2ecc71; }
+
+        /* ONLINE TOGGLE */
+        .online-wrap {
+            display: flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,0.15); padding: 5px 11px; border-radius: 18px;
+        }
+        .online-dot { width: 7px; height: 7px; border-radius: 50%; background: #888; }
+        .online-dot.on { background: #2ecc71; box-shadow: 0 0 5px #2ecc71; }
+        .online-label { font-size: 12px; font-weight: 500; }
+        .toggle-sw {
+            width: 38px; height: 20px; border-radius: 10px; background: #888;
+            position: relative; cursor: pointer; transition: background 0.3s;
+        }
+        .toggle-sw.on { background: var(--success); }
+        .toggle-sw::after {
+            content: ''; position: absolute; width: 14px; height: 14px;
+            background: white; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.3s;
+        }
+        .toggle-sw.on::after { transform: translateX(18px); }
+
+        /* CONTAINER */
+        .container { max-width: 520px; margin: 0 auto; padding: 16px 14px 32px; }
+
+        /* STAT ROW */
+        .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+        .stat-card {
+            background: white; border-radius: var(--card-radius); padding: 13px 10px;
+            text-align: center; box-shadow: 0 3px 10px rgba(0,0,0,0.06); border-top: 3px solid transparent;
+        }
+        .stat-card.s-green  { border-top-color: var(--success); }
+        .stat-card.s-orange { border-top-color: var(--accent); }
+        .stat-card.s-blue   { border-top-color: var(--info); }
+        .stat-lbl { font-size: 11px; color: #888; margin-bottom: 3px; }
+        .stat-val { font-size: 1.4rem; font-weight: 600; color: var(--primary); }
+        .stat-sub { font-size: 10px; color: #aaa; margin-top: 1px; }
+
+        /* ZONE SELECTOR PANEL */
+        .zone-panel {
+            background: white; border-radius: var(--card-radius); padding: 20px;
+            margin-bottom: 16px; box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+            display: none;
+        }
+        .zone-panel.visible { display: block; }
+        .zone-panel-title {
+            font-size: 16px; font-weight: 600; color: var(--primary);
+            margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+        }
+        .zone-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .zone-card {
+            border: 2px solid #eee; border-radius: 14px; padding: 14px 12px;
+            cursor: pointer; transition: 0.2s; text-align: center;
+            background: white;
+        }
+        .zone-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .zone-card.selected { border-color: var(--success); background: #f0faf4; }
+        .zone-card.closed { border-color: #eee; background: #f8f8f8; opacity: 0.6; cursor: not-allowed; }
+        .zone-card-icon { font-size: 1.8rem; margin-bottom: 6px; }
+        .zone-card-name { font-size: 14px; font-weight: 600; color: var(--primary); }
+        .zone-card-radius { font-size: 12px; color: #888; margin-top: 3px; }
+        .zone-card-status { font-size: 11px; margin-top: 5px; }
+        .zone-card-status.open { color: var(--success); }
+        .zone-card-status.closed { color: #aaa; }
+        .zone-card-riders { font-size: 11px; color: var(--info); margin-top: 3px; }
+        .zone-loading { text-align: center; padding: 20px; color: #aaa; font-size: 14px; }
+
+        /* STREAK */
+        .streak-banner {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            border-radius: var(--card-radius); padding: 13px 16px;
+            color: white; display: none; margin-bottom: 14px; align-items: center; gap: 12px;
+        }
+        .streak-banner.visible { display: flex; }
+        .streak-icon { font-size: 1.8rem; flex-shrink: 0; }
+        .streak-info { flex: 1; }
+        .streak-title { font-size: 14px; font-weight: 600; }
+        .streak-sub { font-size: 11px; opacity: 0.85; margin-top: 2px; }
+        .streak-bar-wrap { height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; margin-top: 7px; }
+        .streak-bar { height: 100%; background: white; border-radius: 2px; transition: width 0.5s; }
+
+        /* TABS */
+        .tabs { display: flex; background: white; border-radius: 14px; padding: 4px; gap: 4px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .tab-btn { flex: 1; padding: 9px; border: none; border-radius: 10px; background: transparent; color: #888; font-family: 'Kanit'; font-size: 13px; cursor: pointer; transition: 0.2s; font-weight: 500; }
+        .tab-btn.active { background: var(--primary); color: white; }
+
+        /* OFFLINE */
+        .offline-msg { text-align: center; padding: 36px 20px; background: white; border-radius: var(--card-radius); box-shadow: 0 3px 12px rgba(0,0,0,0.06); display: none; }
+        .offline-msg.visible { display: block; }
+        .offline-msg i { font-size: 2.5rem; color: #ddd; display: block; margin-bottom: 12px; }
+        .offline-msg p { color: #888; font-size: 14px; line-height: 1.7; }
+
+        /* NO ZONE */
+        .no-zone-msg { text-align: center; padding: 36px 20px; background: white; border-radius: var(--card-radius); box-shadow: 0 3px 12px rgba(0,0,0,0.06); display: none; }
+        .no-zone-msg.visible { display: block; }
+        .no-zone-msg i { font-size: 2.5rem; color: #f39c12; display: block; margin-bottom: 12px; }
+        .no-zone-msg p { color: #888; font-size: 14px; line-height: 1.7; }
+
+        /* JOB CARD */
+        .job-card {
+            background: white; border-radius: var(--card-radius); padding: 16px;
+            margin-bottom: 13px; box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+            border-left: 5px solid var(--accent); transition: 0.2s;
+        }
+        .job-card.active   { border-left-color: var(--success); }
+        .job-card.arriving { border-left-color: var(--info); }
+        .job-card.new-pulse { animation: newPulse 0.6s ease; }
+        @keyframes newPulse {
+            0%   { transform: scale(0.97); box-shadow: 0 0 0 0 rgba(230,126,34,0.5); }
+            70%  { box-shadow: 0 0 0 10px rgba(230,126,34,0); }
+            100% { transform: scale(1); }
+        }
+        .job-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .job-id { font-weight: 600; color: var(--primary); font-size: 13px; }
+        .job-status-badge { font-size: 11px; padding: 3px 9px; border-radius: 10px; background: #f0f0f0; }
+        .zone-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #e8f4fd; color: var(--info); margin-left: 5px; }
+        .job-details { font-size: 13px; margin-bottom: 12px; line-height: 1.9; color: #444; }
+        .job-details b { color: var(--primary); }
+        .pay-tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 8px; }
+        .pay-cash     { background: #e8f5e9; color: #2e7d32; }
+        .pay-transfer { background: #e3f2fd; color: #1565c0; }
+        .timer-row { display: flex; align-items: center; gap: 8px; background: #f8f9fa; border-radius: 9px; padding: 7px 11px; margin-bottom: 10px; }
+        .timer-label { font-size: 12px; color: #666; flex: 1; }
+        .timer-display { font-size: 15px; font-weight: 600; color: var(--primary); font-variant-numeric: tabular-nums; }
+        .btn-map { width: 100%; padding: 9px; border: 1.5px solid var(--info); border-radius: 10px; background: #eaf4fb; color: var(--info); font-family: 'Kanit'; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 9px; transition: 0.2s; }
+        .btn-map:hover { background: var(--info); color: white; }
+        .btn-job { width: 100%; padding: 12px; border: none; border-radius: 12px; cursor: pointer; font-family: 'Kanit'; font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 7px; transition: 0.2s; }
+        .btn-accept   { background: var(--accent); color: white; }
+        .btn-arrive   { background: var(--info);    color: white; }
+        .btn-complete { background: var(--success); color: white; }
+        .btn-done     { background: #eee; color: #aaa; cursor: default; }
+        .btn-job:not(.btn-done):hover { opacity: 0.88; transform: translateY(-1px); }
+
+        /* HISTORY */
+        .history-header { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+        .hist-stat { background: white; border-radius: 14px; padding: 13px; text-align: center; box-shadow: 0 3px 10px rgba(0,0,0,0.05); }
+        .hist-stat-val { font-size: 1.5rem; font-weight: 600; color: var(--primary); }
+        .hist-stat-lbl { font-size: 11px; color: #888; margin-top: 2px; }
+        .hist-list { background: white; border-radius: 14px; overflow: hidden; box-shadow: 0 3px 10px rgba(0,0,0,0.05); }
+        .hist-row { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-bottom: 1px solid #f5f5f5; }
+        .hist-row:last-child { border-bottom: none; }
+        .hist-date { font-size: 12px; color: #888; width: 55px; flex-shrink: 0; }
+        .hist-orders { font-size: 13px; color: #555; flex: 1; }
+        .hist-earn { font-size: 14px; font-weight: 600; color: var(--success); }
+        .hist-empty { text-align: center; padding: 28px; color: #aaa; font-size: 14px; }
+
+        /* TOAST */
+        #toastBox { position: fixed; top: 66px; right: 14px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+        .toast { background: var(--primary); color: white; padding: 11px 16px; border-radius: 13px; box-shadow: 0 6px 20px rgba(0,0,0,0.2); min-width: 220px; display: flex; align-items: flex-start; gap: 9px; animation: toastIn 0.3s ease; }
+        .toast.warn { background: #e67e22; }
+        .toast.ok   { background: var(--success); }
+        @keyframes toastIn { from { transform: translateX(110%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+        .toast-title { font-weight: 600; font-size: 13px; }
+        .toast-msg   { font-size: 11px; opacity: 0.85; margin-top: 1px; }
+
+        /* NOTIF BANNER */
+        #notifBanner { background: #fff3cd; border: 1px solid #ffc107; border-radius: 12px; padding: 10px 14px; margin-bottom: 13px; display: none; align-items: center; gap: 9px; font-size: 13px; }
+        #notifBanner button { padding: 4px 11px; background: #f39c12; color: white; border: none; border-radius: 7px; cursor: pointer; font-family: 'Kanit'; font-size: 12px; }
+
+        /* MODAL */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.55); display: none; justify-content: center; align-items: center; z-index: 3000; }
+        .modal.open { display: flex; }
+        .modal-box { background: white; padding: 26px 22px; border-radius: 20px; max-width: 330px; width: 90%; text-align: center; }
+        .modal-box h3 { color: var(--primary); font-size: 1.15rem; margin-bottom: 9px; }
+        .modal-box p { color: #666; font-size: 13px; line-height: 1.6; margin-bottom: 18px; }
+        .btn-grp { display: flex; gap: 9px; }
+        .btn-m { flex: 1; padding: 11px; border: none; border-radius: 10px; cursor: pointer; font-family: 'Kanit'; font-weight: 600; font-size: 14px; }
+        .btn-m-ok     { background: var(--success); color: white; }
+        .btn-m-cancel { background: #eee; color: #666; }
+
+        /* AUTH */
+        .auth-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, var(--primary), #1a252f); z-index: 2000; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .auth-box { background: white; padding: 32px 26px; border-radius: 22px; width: 100%; max-width: 360px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        .auth-icon { font-size: 42px; color: var(--accent); margin-bottom: 12px; }
+        .auth-box h2 { color: var(--primary); font-size: 1.3rem; margin-bottom: 5px; }
+        .auth-box p { color: #888; font-size: 13px; line-height: 1.6; margin-bottom: 20px; }
+        .auth-input { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 11px; font-family: 'Kanit'; font-size: 16px; text-align: center; margin-bottom: 11px; transition: border-color 0.2s; }
+        .auth-input:focus { outline: none; border-color: var(--accent); }
+        .btn-auth { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 11px; cursor: pointer; font-family: 'Kanit'; font-size: 16px; font-weight: 600; transition: 0.2s; }
+        .btn-auth:hover { background: #d35400; }
+        .btn-auth-sec { width: 100%; padding: 9px; background: #f5f5f5; color: #666; border: none; border-radius: 10px; cursor: pointer; font-family: 'Kanit'; font-size: 13px; margin-top: 9px; }
+
+        /* LOADING */
+        .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.82); display: none; justify-content: center; align-items: center; z-index: 4000; font-family: 'Kanit'; backdrop-filter: blur(2px); }
+        .loader { width: 30px; height: 30px; border: 3px solid #eee; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .section-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; color: var(--primary); display: flex; align-items: center; gap: 7px; }
+        .refresh-ticker { text-align: center; font-size: 12px; color: #bbb; margin-top: 10px; }
+        .no-jobs { text-align: center; padding: 35px 20px; color: #aaa; font-size: 14px; }
+        .no-jobs i { font-size: 2.3rem; display: block; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading-overlay"><div class="loader"></div>กำลังประมวลผล...</div>
+    <div id="toastBox"></div>
+
+    <!-- AUTH -->
+    <div id="authScreen" class="auth-overlay">
+        <div class="auth-box">
+            <div class="auth-icon"><i class="fas fa-motorcycle"></i></div>
+            <div id="loginView">
+                <h2>ไรเดอร์ Login</h2>
+                <p>กรุณาใส่เบอร์โทรศัพท์เพื่อเข้าทำงาน</p>
+                <input type="tel" id="riderPhone" class="auth-input" placeholder="0XXXXXXXXX" maxlength="10">
+                <button class="btn-auth" onclick="loginRider()">เข้าสู่ระบบ</button>
+                <button class="btn-auth-sec" onclick="showRegister()">สมัครเป็นไรเดอร์ใหม่</button>
+            </div>
+            <div id="registerView" style="display:none;">
+                <h2>สมัครไรเดอร์</h2>
+                <p>กรอกข้อมูลเพื่อเริ่มรับงานส่งอาหาร</p>
+                <input type="text" id="regName" class="auth-input" placeholder="ชื่อ-นามสกุล">
+                <input type="tel" id="regPhone" class="auth-input" placeholder="0XXXXXXXXX" maxlength="10">
+                <button class="btn-auth" onclick="registerRider()">สมัครและเริ่มงาน</button>
+                <button class="btn-auth-sec" onclick="showLogin()">มีบัญชีแล้ว — Login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAYMENT MODAL -->
+    <div id="payModal" class="modal">
+        <div class="modal-box">
+            <h3>ยืนยันการรับเงิน 💰</h3>
+            <p>คุณได้รับค่าสินค้าและค่าจัดส่ง<br>จากลูกค้าเรียบร้อยแล้วใช่หรือไม่?</p>
+            <div class="btn-grp">
+                <button class="btn-m btn-m-cancel" onclick="closeModal('payModal')">ยังไม่ได้รับ</button>
+                <button class="btn-m btn-m-ok"     onclick="confirmPayment()">ใช่ ได้รับแล้ว</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAV -->
+    <nav>
+        <div class="nav-logo">🛵 เอาหยังบ่ | Rider</div>
+        <div class="nav-right">
+            <div class="zone-badge-nav" id="zoneBadgeNav" onclick="showZonePanel()" title="เปลี่ยนโซน">
+                <div class="zone-dot" id="zoneDot"></div>
+                <span id="zoneNavLabel">เลือกโซน</span>
+                <i class="fas fa-chevron-down" style="font-size:10px; opacity:0.7;"></i>
+            </div>
+            <div class="online-wrap" onclick="toggleOnline()">
+                <div class="online-dot" id="onlineDot"></div>
+                <span class="online-label" id="onlineLabel">ออฟไลน์</span>
+                <div class="toggle-sw" id="onlineSw"></div>
+            </div>
+            <span class="rider-name" id="riderNameDisplay">-</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div id="notifBanner">
+            <i class="fas fa-bell" style="color:#f39c12;"></i>
+            <span>เปิดแจ้งเตือนเพื่อรับ ping เมื่อมีงานใหม่</span>
+            <button onclick="askNotif()">เปิด</button>
+            <button onclick="document.getElementById('notifBanner').style.display='none'" style="background:#ccc;">ปิด</button>
+        </div>
+
+        <!-- STAT ROW -->
+        <div class="stat-row">
+            <div class="stat-card s-green">
+                <div class="stat-lbl">รายได้สะสม</div>
+                <div class="stat-val" id="statEarnings">0</div>
+                <div class="stat-sub">บาท</div>
+            </div>
+            <div class="stat-card s-orange">
+                <div class="stat-lbl">งานที่รับ</div>
+                <div class="stat-val" id="statJobs">0/3</div>
+                <div class="stat-sub">ออเดอร์</div>
+            </div>
+            <div class="stat-card s-blue">
+                <div class="stat-lbl">วันนี้</div>
+                <div class="stat-val" id="statToday">0</div>
+                <div class="stat-sub">บาท</div>
+            </div>
+        </div>
+
+        <!-- ZONE SELECTOR PANEL -->
+        <div class="zone-panel" id="zonePanel">
+            <div class="zone-panel-title">
+                <i class="fas fa-map-marked-alt"></i> เลือกโซนรับงาน
+                <button id="closePanelBtn" onclick="hideZonePanel()" style="margin-left:auto; background:none; border:none; cursor:pointer; color:#aaa; font-size:18px;">✕</button>
+            </div>
+            <div class="zone-grid" id="zoneGrid">
+                <div class="zone-loading"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดโซน...</div>
+            </div>
+        </div>
+
+        <!-- STREAK -->
+        <div class="streak-banner" id="streakBanner">
+            <div class="streak-icon">🔥</div>
+            <div class="streak-info">
+                <div class="streak-title" id="streakTitle">สายไฟ!</div>
+                <div class="streak-sub" id="streakSub">อีกนิดเดียว</div>
+                <div class="streak-bar-wrap"><div class="streak-bar" id="streakBar" style="width:0%"></div></div>
+            </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('jobs', this)">
+                <i class="fas fa-list-ul"></i> งานพร้อมส่ง
+            </button>
+            <button class="tab-btn" onclick="switchTab('history', this)">
+                <i class="fas fa-history"></i> ประวัติรายได้
+            </button>
+        </div>
+
+        <!-- JOBS TAB -->
+        <div id="tabJobs">
+            <div class="offline-msg" id="offlineMsg">
+                <i class="fas fa-moon"></i>
+                <p>คุณกำลังออฟไลน์อยู่<br>เปิดสวิตช์รับงานด้านบนเพื่อเริ่มรับออเดอร์</p>
+            </div>
+            <div class="no-zone-msg" id="noZoneMsg">
+                <i class="fas fa-map-marked-alt"></i>
+                <p>กรุณาเลือกโซนรับงานก่อนค่ะ<br>กดที่ปุ่มโซนด้านบนเพื่อเลือก</p>
+            </div>
+            <div id="jobList"></div>
+            <div class="refresh-ticker" id="ticker">อัปเดตอัตโนมัติใน 30 วินาที...</div>
+        </div>
+
+        <!-- HISTORY TAB -->
+        <div id="tabHistory" style="display:none;">
+            <div class="history-header">
+                <div class="hist-stat">
+                    <div class="hist-stat-val" id="histWeekEarn">0</div>
+                    <div class="hist-stat-lbl">รายได้สัปดาห์นี้ (บาท)</div>
+                </div>
+                <div class="hist-stat">
+                    <div class="hist-stat-val" id="histWeekJobs">0</div>
+                    <div class="hist-stat-lbl">ออเดอร์สัปดาห์นี้</div>
+                </div>
+            </div>
+            <div class="hist-list" id="histList">
+                <div class="hist-empty">ยังไม่มีประวัติค่ะ</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const SCRIPT_URL  = "https://script.google.com/macros/s/AKfycbz7JkH4FaObGM3DBLl8574VEEtsHuG_HYiinHt3cvFZSUvOGupvQy_ZsQsFHhmRuDV78w/exec";
+    const EARN_PER_JOB    = 15;
+    const STREAK_TARGET   = 5;
+    const STREAK_BONUS    = 30;
+    const ZONE_ICONS      = ['🏘️','🏪','🌳','🏢','🌾','🏙️','🛣️','🏫'];
+
+    let state = {
+        rider: null, online: false,
+        currentZoneId: null, currentZoneName: '',
+        zones: [],
+        jobs: [], prevJobIds: new Set(),
+        currentJobRow: null,
+        jobTimers: {},
+        todayEarnings: 0, streakCount: 0,
+        history: []
+    };
+    let refreshTimer = null, tickerSec = 30;
+
+    // ── UTILS ─────────────────────────────────────────────
+    function showLoading(v) { document.getElementById('loading').style.display = v ? 'flex' : 'none'; }
+    function toast(title, msg='', type='') {
+        const box = document.getElementById('toastBox');
+        const el  = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.innerHTML = `<div><div class="toast-title">${title}</div>${msg ? `<div class="toast-msg">${msg}</div>` : ''}</div>`;
+        box.appendChild(el);
+        setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity 0.4s'; setTimeout(()=>el.remove(), 400); }, 3500);
+    }
+    function openModal(id)  { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    function fmtTime(sec)   { return `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`; }
+    function calcDist(lat1,lon1,lat2,lon2) {
+        const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
+        const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+        return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+    }
+
+    // ── NOTIFICATION ──────────────────────────────────────
+    function checkNotif() {
+        if (!('Notification' in window)) return;
+        if (Notification.permission==='default') document.getElementById('notifBanner').style.display='flex';
+    }
+    async function askNotif() {
+        const p = await Notification.requestPermission();
+        document.getElementById('notifBanner').style.display='none';
+        if (p==='granted') toast('เปิดแจ้งเตือนแล้ว','','ok');
+    }
+    function playBeep() {
+        try {
+            const ctx=new(window.AudioContext||window.webkitAudioContext)();
+            [0,200].forEach(d=>{
+                const o=ctx.createOscillator(),g=ctx.createGain();
+                o.connect(g); g.connect(ctx.destination);
+                o.frequency.value=760; o.type='sine';
+                g.gain.setValueAtTime(0.4,ctx.currentTime+d/1000);
+                g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+d/1000+0.25);
+                o.start(ctx.currentTime+d/1000); o.stop(ctx.currentTime+d/1000+0.25);
+            });
+        } catch(e){}
+    }
+    function sendBrowserNotif(job) {
+        if (Notification.permission!=='granted') return;
+        new Notification('🛵 งานใหม่ในโซน '+state.currentZoneName,{
+            body:`#${job.row} · ${job.itemsText||''} · ${job.total} บาท`,
+            icon:'https://cdn-icons-png.flaticon.com/512/2972/2972165.png'
+        });
+    }
+
+    // ── AUTH ──────────────────────────────────────────────
+    function showRegister() { document.getElementById('loginView').style.display='none'; document.getElementById('registerView').style.display='block'; }
+    function showLogin()    { document.getElementById('registerView').style.display='none'; document.getElementById('loginView').style.display='block'; }
+
+    async function loginRider() {
+        const phone = document.getElementById('riderPhone').value.trim();
+        if (phone.length!==10) return alert('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง');
+        showLoading(true);
+        try {
+            const res  = await fetch(`${SCRIPT_URL}?action=getRiderData&phone=${phone}`);
+            const data = await res.json();
+            if (data && data.found) {
+                state.rider = { phone, name:data.name, earnings:data.earnings||0, jobsCount:data.jobsCount||0 };
+                initRider();
+            } else { alert('ไม่พบข้อมูลในระบบ กรุณาสมัครก่อนค่ะ'); showRegister(); }
+        } catch(e) { alert('การเชื่อมต่อล้มเหลว: '+e.message); }
+        showLoading(false);
+    }
+
+    async function registerRider() {
+        const name  = document.getElementById('regName').value.trim();
+        const phone = document.getElementById('regPhone').value.trim();
+        if (!name)               return alert('กรุณากรอกชื่อ');
+        if (phone.length!==10)   return alert('กรุณากรอกเบอร์โทรให้ถูกต้อง');
+        showLoading(true);
+        try {
+            const res  = await fetch(`${SCRIPT_URL}?action=registerRider&phone=${phone}&name=${encodeURIComponent(name)}`);
+            const data = await res.json();
+            if (data.success) {
+                state.rider = { phone, name, earnings:0, jobsCount:0 };
+                toast('สมัครสำเร็จ! 🎉','ยินดีต้อนรับสู่ทีมไรเดอร์','ok');
+                initRider();
+            } else { alert(data.message); }
+        } catch(e) { alert('การสมัครล้มเหลว'); }
+        showLoading(false);
+    }
+
+    // ── INIT ──────────────────────────────────────────────
+    async function initRider() {
+        document.getElementById('authScreen').style.display='none';
+        document.getElementById('riderNameDisplay').innerText = state.rider.name;
+        updateStatUI();
+        loadSavedOnlineState();
+        checkNotif();
+        loadHistory();
+        await loadZones();           // โหลดโซนทั้งหมด
+        await restoreRiderZone();    // ดึงโซนที่ไรเดอร์เลือกไว้ครั้งล่าสุด
+        if (state.online && state.currentZoneId) { loadJobs(); startAutoRefresh(); }
+        startTicker();
+    }
+
+    // ── ZONES ─────────────────────────────────────────────
+    async function loadZones() {
+        try {
+            const res  = await fetch(`${SCRIPT_URL}?action=getZones`);
+            const data = await res.json();
+            state.zones = (data.success && data.zones) ? data.zones : [];
+        } catch(e) { console.error('loadZones error',e); state.zones=[]; }
+    }
+
+    async function restoreRiderZone() {
+        // ลองดึงโซนจาก Sheet ก่อน (ถ้าบันทึกไว้)
+        try {
+            const res  = await fetch(`${SCRIPT_URL}?action=getRiderZone&phone=${state.rider.phone}`);
+            const data = await res.json();
+            if (data.success && data.zoneId) {
+                const zone = state.zones.find(z => z.zoneId===data.zoneId);
+                if (zone && zone.status==='open') {
+                    applyZone(zone.zoneId, zone.name, false);
+                    return;
+                }
+            }
+        } catch(e) {}
+        // fallback: ดึงจาก localStorage
+        const saved = localStorage.getItem(`riderZone_${state.rider?.phone}`);
+        if (saved) {
+            try {
+                const obj = JSON.parse(saved);
+                const zone = state.zones.find(z=>z.zoneId===obj.zoneId);
+                if (zone && zone.status==='open') { applyZone(zone.zoneId,zone.name,false); return; }
+            } catch(e) {}
+        }
+        // ไม่มีโซน → แสดง panel ให้เลือก
+        showZonePanel();
+    }
+
+    function applyZone(zoneId, zoneName, saveToServer=true) {
+        state.currentZoneId   = zoneId;
+        state.currentZoneName = zoneName;
+        // อัปเดต UI
+        document.getElementById('zoneNavLabel').innerText = zoneName;
+        document.getElementById('zoneDot').classList.add('on');
+        document.getElementById('noZoneMsg').classList.remove('visible');
+        // บันทึก localStorage
+        localStorage.setItem(`riderZone_${state.rider.phone}`, JSON.stringify({zoneId,zoneName}));
+        // บันทึก Sheet (background)
+        if (saveToServer) {
+            fetch(`${SCRIPT_URL}?action=setRiderZone&phone=${state.rider.phone}&zoneId=${zoneId}`)
+                .catch(()=>{});
+        }
+        // refresh งาน
+        if (state.online) { loadJobs(); if (!refreshTimer) startAutoRefresh(); }
+    }
+
+    function showZonePanel() {
+        const panel = document.getElementById('zonePanel');
+        panel.classList.add('visible');
+        renderZoneGrid();
+        panel.scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+
+    function hideZonePanel() {
+        document.getElementById('zonePanel').classList.remove('visible');
+    }
+
+    function renderZoneGrid() {
+        const grid = document.getElementById('zoneGrid');
+        if (!state.zones.length) {
+            grid.innerHTML = '<div class="zone-loading" style="grid-column:1/-1;">ไม่พบข้อมูลโซน กรุณาติดต่อแอดมินค่ะ</div>';
+            return;
+        }
+        grid.innerHTML = state.zones.map((zone,i) => {
+            const isSelected = zone.zoneId === state.currentZoneId;
+            const isClosed   = zone.status !== 'open';
+            const icon       = ZONE_ICONS[i % ZONE_ICONS.length];
+            return `
+                <div class="zone-card ${isSelected?'selected':''} ${isClosed?'closed':''}"
+                     onclick="${isClosed?'':'selectZone(\''+zone.zoneId+'\',\''+zone.name+'\')'}">
+                    <div class="zone-card-icon">${icon}</div>
+                    <div class="zone-card-name">${zone.name}</div>
+                    <div class="zone-card-radius">รัศมี ${zone.radius} กม.</div>
+                    <div class="zone-card-status ${isClosed?'closed':'open'}">
+                        ${isClosed ? '⛔ ปิดให้บริการ' : '✅ เปิดรับงาน'}
+                    </div>
+                    ${isSelected ? '<div style="font-size:11px;color:var(--success);margin-top:4px;">โซนของคุณ</div>' : ''}
+                </div>`;
+        }).join('');
+    }
+
+    async function selectZone(zoneId, zoneName) {
+        showLoading(true);
+        try {
+            await fetch(`${SCRIPT_URL}?action=setRiderZone&phone=${state.rider.phone}&zoneId=${zoneId}`);
+        } catch(e) {}
+        applyZone(zoneId, zoneName, false);
+        toast(`เลือกโซน ${zoneName} แล้ว 📍`, 'ระบบกำลังค้นหางานในโซนนี้', 'ok');
+        hideZonePanel();
+        renderZoneGrid();
+        showLoading(false);
+    }
+
+    // ── ONLINE TOGGLE ─────────────────────────────────────
+    function loadSavedOnlineState() {
+        const saved = localStorage.getItem(`riderOnline_${state.rider?.phone}`);
+        state.online = saved==='true';
+        updateOnlineUI();
+    }
+
+    function toggleOnline() {
+        if (!state.currentZoneId) {
+            toast('กรุณาเลือกโซนก่อนค่ะ','กดปุ่มโซนด้านบน');
+            showZonePanel(); return;
+        }
+        state.online = !state.online;
+        localStorage.setItem(`riderOnline_${state.rider.phone}`, state.online);
+        updateOnlineUI();
+        if (state.online) {
+            toast('รับงานแล้ว','ระบบกำลังค้นหางานในโซน '+state.currentZoneName,'ok');
+            loadJobs(); startAutoRefresh();
+        } else {
+            toast('หยุดรับงาน','ไม่มีงานใหม่เด้งเข้ามาค่ะ');
+            if (refreshTimer) clearInterval(refreshTimer);
+            document.getElementById('jobList').innerHTML='';
+            document.getElementById('offlineMsg').classList.add('visible');
+        }
+    }
+
+    function updateOnlineUI() {
+        const sw    = document.getElementById('onlineSw');
+        const dot   = document.getElementById('onlineDot');
+        const label = document.getElementById('onlineLabel');
+        const offlineMsg = document.getElementById('offlineMsg');
+        const noZoneMsg  = document.getElementById('noZoneMsg');
+        if (state.online) {
+            sw.classList.add('on'); dot.classList.add('on'); label.innerText='ออนไลน์';
+            offlineMsg.classList.remove('visible'); noZoneMsg.classList.remove('visible');
+        } else {
+            sw.classList.remove('on'); dot.classList.remove('on'); label.innerText='ออฟไลน์';
+            if (!state.currentZoneId) noZoneMsg.classList.remove('visible');
+            offlineMsg.classList.add('visible');
+        }
+    }
+
+    // ── LOAD JOBS (กรองโซน) ───────────────────────────────
+    async function loadJobs() {
+        if (!state.online || !state.currentZoneId) return;
+        try {
+            const url  = `${SCRIPT_URL}?action=getPendingOrders&zoneId=${state.currentZoneId}`;
+            const res  = await fetch(url);
+            const data = await res.json();
+            const active = Array.isArray(data) ? data.filter(j=>j.status!=='ส่งสำเร็จ') : [];
+
+            // ตรวจจับงานใหม่
+            const newOnes = active.filter(j=>j.status==='พร้อมจัดส่ง' && !state.prevJobIds.has(j.row));
+            if (newOnes.length>0 && state.prevJobIds.size>0) {
+                playBeep(); sendBrowserNotif(newOnes[0]);
+                toast(`🛵 งานใหม่ ${newOnes.length} รายการในโซน ${state.currentZoneName}!`,`#${newOnes[0].row} · ${newOnes[0].total} บาท`,'warn');
+            }
+            state.prevJobIds = new Set(active.map(j=>j.row));
+            state.jobs = active;
+            renderJobs();
+        } catch(e) { console.error('loadJobs error',e); }
+    }
+
+    // ── RENDER JOBS ────────────────────────────────────────
+    function renderJobs() {
+        const list = document.getElementById('jobList');
+        if (!state.jobs.length) {
+            list.innerHTML=`<div class="no-jobs"><i class="fas fa-box-open"></i>ไม่มีงานในโซน ${state.currentZoneName} ตอนนี้ค่ะ</div>`;
+            return;
+        }
+        list.innerHTML='';
+        state.jobs.forEach(job=>{
+            const div = document.createElement('div');
+            let cardClass='', btnText='รับงานนี้', btnClass='btn-accept', btnIcon='fa-hand-pointer';
+            let showMap=false, showTimer=false;
+            if (job.status==='กำลังจัดส่ง')  { cardClass='active';   btnText='ถึงจุดส่งแล้ว'; btnClass='btn-arrive';   btnIcon='fa-map-marker-alt'; showMap=true; showTimer=true; }
+            if (job.status==='กำลังส่งมอบ')  { cardClass='arriving'; btnText='ยืนยันรับเงิน';  btnClass='btn-complete'; btnIcon='fa-check-circle';  showMap=true; showTimer=true; }
+
+            const payClass = job.paymentMethod==='transfer' ? 'pay-transfer' : 'pay-cash';
+            const payText  = job.paymentMethod==='transfer' ? '💳 โอนเงิน' : '💵 เงินสด';
+            const zoneLabel= job.zoneId ? `<span class="zone-tag"><i class="fas fa-map-pin" style="font-size:10px;"></i> ${job.zoneId}</span>` : '';
+
+            div.className = `job-card ${cardClass}`;
+            div.id = `job-${job.row}`;
+            div.innerHTML = `
+                <div class="job-header">
+                    <span class="job-id">📋 ออเดอร์ #${job.row}${zoneLabel}</span>
+                    <span class="job-status-badge">${job.status||'รอดำเนินการ'}</span>
+                </div>
+                <div class="job-details">
+                    <b>ลูกค้า:</b> ${job.phone||'ไม่ระบุ'}<br>
+                    <b>รายการ:</b> ${job.itemsText||'ไม่ระบุ'}<br>
+                    <b>ยอดเงิน:</b> ${job.total} บาท <small style="color:#aaa;">(ค่าส่ง 10 บาท)</small><br>
+                    <span class="pay-tag ${payClass}">${payText}</span>
+                    ${job.note ? `<br><small style="color:#888;"><i class="fas fa-sticky-note"></i> ${job.note}</small>` : ''}
+                </div>
+                ${showTimer ? `<div class="timer-row"><i class="fas fa-stopwatch" style="color:var(--info);"></i><span class="timer-label">เวลาตั้งแต่รับงาน</span><span class="timer-display" id="timer-${job.row}">--:--</span></div>` : ''}
+                ${showMap && job.lat && job.lng ? `<button class="btn-map" onclick="openMaps(${job.lat},${job.lng})"><i class="fas fa-map-marked-alt"></i> นำทางด้วย Google Maps</button>` : ''}
+                <button class="btn-job ${btnClass}" onclick="handleJob(${job.row},'${job.status||''}')">
+                    <i class="fas ${btnIcon}"></i> ${btnText}
+                </button>`;
+            list.appendChild(div);
+            if (showTimer) startTimer(job.row);
+        });
+    }
+
+    // ── TIMER ─────────────────────────────────────────────
+    function startTimer(row) {
+        if (state.jobTimers[row]) return;
+        const start = Date.now() - (parseInt(localStorage.getItem(`timer_${row}`))||0);
+        state.jobTimers[row] = { start };
+        state.jobTimers[row].interval = setInterval(()=>{
+            const el = document.getElementById(`timer-${row}`);
+            if (!el) { clearInterval(state.jobTimers[row].interval); return; }
+            const elapsed = Math.floor((Date.now()-start)/1000);
+            localStorage.setItem(`timer_${row}`, Date.now()-start);
+            el.innerText = fmtTime(elapsed);
+        }, 1000);
+    }
+    function stopTimer(row) {
+        if (state.jobTimers[row]?.interval) clearInterval(state.jobTimers[row].interval);
+        delete state.jobTimers[row];
+        localStorage.removeItem(`timer_${row}`);
+    }
+
+    // ── MAPS ──────────────────────────────────────────────
+    function openMaps(lat, lng) {
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`, '_blank');
+    }
+
+    // ── JOB ACTIONS ───────────────────────────────────────
+    async function handleJob(row, status) {
+        state.currentJobRow = row;
+        if      (status==='พร้อมจัดส่ง') acceptJob(row);
+        else if (status==='กำลังจัดส่ง') markArrived(row);
+        else if (status==='กำลังส่งมอบ') openModal('payModal');
+    }
+
+    async function acceptJob(row) {
+        showLoading(true);
+        try {
+            const res  = await fetch(`${SCRIPT_URL}?action=acceptJob&row=${row}&phone=${state.rider.phone}`);
+            const data = await res.json();
+            if (data.success) {
+                toast('รับงานแล้ว! 🛵','เดินทางไปส่งได้เลยค่ะ','ok');
+                localStorage.setItem(`timer_${row}`,0);
+                await refreshAll();
+            } else { alert(data.message); }
+        } catch(e) { alert('การรับงานล้มเหลว'); }
+        showLoading(false);
+    }
+
+    async function markArrived(row) {
+        showLoading(true);
+        try {
+            const res  = await fetch(`${SCRIPT_URL}?action=markAsArrived&row=${row}`);
+            const data = await res.json();
+            if (data.success) { toast('แจ้งลูกค้าแล้ว','กรุณาเก็บเงินก่อนกดยืนยัน','ok'); await loadJobs(); }
+            else { alert(data.message); }
+        } catch(e) { alert('เกิดข้อผิดพลาด'); }
+        showLoading(false);
+    }
+
+    async function confirmPayment() {
+        closeModal('payModal');
+        showLoading(true);
+        try {
+            const res  = await fetch(`${SCRIPT_URL}?action=completeJob&row=${state.currentJobRow}&phone=${state.rider.phone}`);
+            const data = await res.json();
+            if (data.success) {
+                stopTimer(state.currentJobRow);
+                state.rider.earnings  = (state.rider.earnings ||0) + EARN_PER_JOB;
+                state.todayEarnings   = (state.todayEarnings  ||0) + EARN_PER_JOB;
+                state.streakCount     = (state.streakCount    ||0) + 1;
+                saveHistoryEntry(); updateStatUI(); updateStreak();
+                toast(`ส่งสำเร็จ! +${EARN_PER_JOB} บาท 🎉`,'','ok');
+                await refreshAll();
+            } else { alert(data.message); }
+        } catch(e) { alert('การปิดงานล้มเหลว'); }
+        showLoading(false);
+    }
+
+    // ── STREAK ────────────────────────────────────────────
+    function updateStreak() {
+        const banner = document.getElementById('streakBanner');
+        if (state.streakCount<2) { banner.classList.remove('visible'); return; }
+        banner.classList.add('visible');
+        const pct = Math.min((state.streakCount/STREAK_TARGET)*100,100);
+        document.getElementById('streakBar').style.width = pct+'%';
+        if (state.streakCount>=STREAK_TARGET) {
+            document.getElementById('streakTitle').innerText=`🎉 สายไฟ ${state.streakCount} ออเดอร์!`;
+            document.getElementById('streakSub').innerText=`รับโบนัส +${STREAK_BONUS} บาทแล้ว!`;
+            toast(`โบนัสสายไฟ +${STREAK_BONUS} บาท! 🔥`,'','ok');
+            state.streakCount=0;
+        } else {
+            document.getElementById('streakTitle').innerText=`🔥 สายไฟ ${state.streakCount} ออเดอร์ในโซน ${state.currentZoneName}`;
+            document.getElementById('streakSub').innerText=`อีก ${STREAK_TARGET-state.streakCount} ออเดอร์ รับโบนัส +${STREAK_BONUS} บาท`;
+        }
+    }
+
+    // ── HISTORY ────────────────────────────────────────────
+    function histKey() { return `riderHistory_${state.rider?.phone}`; }
+    function saveHistoryEntry() {
+        const today = new Date().toLocaleDateString('th-TH',{day:'2-digit',month:'short'});
+        let hist = JSON.parse(localStorage.getItem(histKey())||'[]');
+        const ex = hist.find(h=>h.date===today);
+        if (ex) { ex.jobs=(ex.jobs||0)+1; ex.earned=(ex.earned||0)+EARN_PER_JOB; }
+        else     hist.unshift({date:today, jobs:1, earned:EARN_PER_JOB});
+        if (hist.length>30) hist=hist.slice(0,30);
+        localStorage.setItem(histKey(),JSON.stringify(hist));
+        state.history=hist;
+    }
+    function loadHistory() {
+        state.history=JSON.parse(localStorage.getItem(histKey())||'[]');
+        renderHistory();
+    }
+    function renderHistory() {
+        const list = document.getElementById('histList');
+        if (!state.history.length) { list.innerHTML='<div class="hist-empty">ยังไม่มีประวัติค่ะ</div>'; document.getElementById('histWeekEarn').innerText='0'; document.getElementById('histWeekJobs').innerText='0'; return; }
+        const week=state.history.slice(0,7);
+        document.getElementById('histWeekEarn').innerText=week.reduce((a,h)=>a+(h.earned||0),0);
+        document.getElementById('histWeekJobs').innerText=week.reduce((a,h)=>a+(h.jobs||0),0);
+        list.innerHTML=state.history.map(h=>`<div class="hist-row"><span class="hist-date">${h.date}</span><span class="hist-orders">${h.jobs} ออเดอร์</span><span class="hist-earn">+${h.earned} บาท</span></div>`).join('');
+    }
+
+    // ── STATS ─────────────────────────────────────────────
+    function updateStatUI() {
+        document.getElementById('statEarnings').innerText=state.rider?.earnings||0;
+        document.getElementById('statJobs').innerText=`${state.rider?.jobsCount||0}/3`;
+        document.getElementById('statToday').innerText=state.todayEarnings||0;
+    }
+
+    async function refreshAll() {
+        await loadJobs();
+        try {
+            const res=await fetch(`${SCRIPT_URL}?action=getRiderData&phone=${state.rider.phone}`);
+            const data=await res.json();
+            if (data?.found) { state.rider.earnings=data.earnings||0; state.rider.jobsCount=data.jobsCount||0; updateStatUI(); }
+        } catch(e){}
+    }
+
+    // ── TABS ──────────────────────────────────────────────
+    function switchTab(tab, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tabJobs').style.display    = tab==='jobs'    ? 'block' : 'none';
+        document.getElementById('tabHistory').style.display = tab==='history' ? 'block' : 'none';
+        if (tab==='history') renderHistory();
+    }
+
+    // ── AUTO REFRESH + TICKER ─────────────────────────────
+    function startAutoRefresh() {
+        if (refreshTimer) clearInterval(refreshTimer);
+        refreshTimer = setInterval(()=>{ if(state.rider&&state.online&&state.currentZoneId) loadJobs(); }, 30000);
+    }
+    function startTicker() {
+        setInterval(()=>{
+            tickerSec--;
+            if (tickerSec<0) tickerSec=30;
+            const el=document.getElementById('ticker');
+            if (el) el.innerText=`อัปเดตอัตโนมัติใน ${tickerSec} วินาที...`;
+        }, 1000);
+    }
+    </script>
+</body>
+</html>

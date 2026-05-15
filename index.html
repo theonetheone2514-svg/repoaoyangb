@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เอาหยังบ่ | สั่งออนไลน์ + สะสมแต้ม</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="เอาหยังบ่">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3448/3448608.png">
+    <link href="https://fonts.googleapis.com/css2?family=Itim&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root { --primary:#2c3e50; --accent:#a65d37; --success:#4caf50; --bg:#fdfbf7; --white:#ffffff; }
+        body { font-family:'Itim',cursive; background-color:var(--bg); margin:0; color:#333; }
+        nav { background:var(--primary); color:white; padding:1rem; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:1000; box-shadow:0 2px 10px rgba(0,0,0,0.2); }
+        .logo { font-size:1.5rem; font-weight:bold; }
+        .user-display { font-size:1rem; cursor:pointer; background:rgba(255,255,255,0.2); padding:5px 15px; border-radius:20px; }
+        .hero { background:linear-gradient(rgba(44,62,80,0.8),rgba(44,62,80,0.8)),url('https://images.unsplash.com/photo-1504674900247-0865df9f7f50?auto=format&fit=crop&w=1000&q=80'); background-size:cover; background-position:center; color:white; padding:60px 20px; text-align:center; }
+        .hero h1 { font-size:2.5rem; margin-bottom:10px; }
+        .hero p { font-size:1.2rem; opacity:0.9; }
+        .container { max-width:1000px; margin:0 auto; padding:20px; }
+        .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:30px; }
+        @media(max-width:768px){.info-grid{grid-template-columns:1fr;}}
+        .info-card { background:white; border-radius:25px; padding:25px; box-shadow:0 4px 15px rgba(0,0,0,0.05); border:2px solid #eee; transition:0.3s; }
+        .info-card:hover { border-color:var(--accent); }
+        .info-card h2 { color:var(--primary); margin-bottom:15px; font-size:1.4rem; display:flex; align-items:center; gap:10px; }
+        .info-card p { font-size:1.1rem; line-height:1.6; color:#666; }
+        .contact-links { display:flex; flex-direction:column; gap:12px; margin-top:15px; }
+        .contact-btn { display:flex; align-items:center; gap:12px; padding:12px 20px; border-radius:15px; text-decoration:none; font-family:'Itim'; font-weight:600; transition:0.3s; }
+        .btn-phone { background:#eef2f7; color:#2c3e50; border:1px solid #ddd; }
+        .btn-line  { background:#00B900; color:white; }
+        .contact-btn:hover { transform:scale(1.02); filter:brightness(90%); }
+
+        /* ZONE INDICATOR */
+        .zone-indicator {
+            background:white; border-radius:20px; padding:14px 20px;
+            margin-bottom:14px; display:flex; align-items:center; gap:12px;
+            box-shadow:0 4px 15px rgba(0,0,0,0.07); border:2px solid #eee;
+            flex-wrap:wrap;
+        }
+        .zone-indicator.has-zone  { border-color:#4caf50; }
+        .zone-indicator.no-rider  { border-color:#f39c12; }
+        .zone-indicator.no-zone   { border-color:#eee; }
+        .zone-icon-wrap { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.3rem; background:#f0f0f0; flex-shrink:0; }
+        .zone-icon-wrap.green  { background:#e8f5e9; }
+        .zone-icon-wrap.orange { background:#fff3e0; }
+        .zone-info { flex:1; min-width:0; }
+        .zone-name { font-size:1rem; font-weight:bold; color:var(--primary); }
+        .zone-status-text { font-size:0.85rem; color:#888; margin-top:2px; }
+        .zone-rider-count { font-size:0.85rem; padding:3px 10px; border-radius:10px; background:#e8f5e9; color:#2e7d32; display:inline-block; margin-top:4px; }
+        .zone-rider-count.warn { background:#fff3e0; color:#e65100; }
+
+        /* LOCATION BOX */
+        .location-box { background:white; padding:15px; border-radius:20px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 15px rgba(0,0,0,0.1); flex-wrap:wrap; gap:10px; }
+        #map { height:300px; width:100%; border-radius:20px; margin-bottom:20px; box-shadow:0 4px 15px rgba(0,0,0,0.1); }
+
+        /* STORE SECTION */
+        .section-title { font-size:1.4rem; color:var(--primary); margin-bottom:15px; display:flex; align-items:center; gap:8px; }
+        .store-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:15px; margin-bottom:25px; }
+        .store-card { background:white; border:2px solid #eee; border-radius:20px; padding:20px 15px; text-align:center; cursor:pointer; transition:0.3s; box-shadow:0 3px 10px rgba(0,0,0,0.05); }
+        .store-card:hover { border-color:var(--accent); transform:translateY(-3px); }
+        .store-card.active { border-color:var(--primary); background:#eef2f7; }
+        .store-icon { font-size:2.2rem; margin-bottom:8px; }
+        .store-name { font-size:1.05rem; font-weight:bold; color:var(--primary); }
+        .store-badge { display:inline-block; background:var(--accent); color:white; font-size:0.75rem; padding:2px 8px; border-radius:10px; margin-top:5px; }
+        .back-btn { display:inline-flex; align-items:center; gap:8px; background:none; border:2px solid var(--primary); color:var(--primary); padding:8px 18px; border-radius:20px; cursor:pointer; font-family:'Itim'; font-size:1rem; margin-bottom:15px; transition:0.2s; }
+        .back-btn:hover { background:var(--primary); color:white; }
+        .menu-section { display:none; }
+        .menu-section.visible { display:block; }
+        .category-tabs { display:flex; gap:10px; overflow-x:auto; padding-bottom:10px; margin-bottom:20px; }
+        .tab { padding:10px 20px; background:white; border:2px solid var(--primary); border-radius:25px; cursor:pointer; white-space:nowrap; transition:0.3s; }
+        .tab.active { background:var(--primary); color:white; }
+        .menu-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:20px; }
+        .menu-item { background:white; border-radius:20px; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,0.1); transition:0.3s; cursor:pointer; }
+        .menu-item:hover { transform:translateY(-5px); }
+        .menu-img { width:100%; height:150px; object-fit:cover; }
+        .menu-info { padding:15px; }
+        .menu-info h3 { margin:0; font-size:1.2rem; }
+        .menu-price { color:var(--accent); font-weight:bold; font-size:1.1rem; margin-top:5px; }
+        .add-btn { width:100%; padding:10px; background:var(--primary); color:white; border:none; border-radius:0 0 20px 20px; cursor:pointer; font-family:'Itim'; }
+        .menu-empty { text-align:center; padding:40px; color:#999; font-size:1.1rem; grid-column:1/-1; }
+
+        .cart-bar { position:fixed; bottom:20px; right:20px; background:var(--accent); color:white; padding:15px 30px; border-radius:30px; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.3); font-weight:bold; z-index:1000; display:flex; align-items:center; gap:10px; }
+        .modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:none; justify-content:center; align-items:center; z-index:2000; }
+        .modal-content { background:white; padding:30px; border-radius:30px; max-width:400px; width:90%; text-align:center; position:relative; max-height:90vh; overflow-y:auto; }
+        .modal-content h2 { color:var(--primary); margin-bottom:20px; }
+        .modal-input { width:100%; padding:12px; margin-bottom:20px; border:2px solid #ddd; border-radius:15px; font-size:1.1rem; text-align:center; font-family:'Itim'; box-sizing:border-box; }
+        .btn-group { display:flex; gap:10px; }
+        .btn { flex:1; padding:12px; border:none; border-radius:15px; cursor:pointer; font-family:'Itim'; font-size:1.1rem; }
+        .btn-primary   { background:var(--primary); color:white; }
+        .btn-secondary { background:#eee; color:#666; }
+        .payment-options { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+        .payment-option { padding:15px; border:2px solid #ddd; border-radius:15px; cursor:pointer; display:flex; align-items:center; gap:15px; transition:0.3s; font-family:'Itim'; font-size:1.1rem; }
+        .payment-option.active { border-color:var(--primary); background:#eef2f7; }
+        .payment-option i { font-size:1.5rem; color:var(--primary); }
+        .qr-display { margin-top:20px; display:none; }
+        .qr-display img { width:200px; height:200px; border:5px solid white; box-shadow:0 0 10px rgba(0,0,0,0.1); }
+        .cart-item { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-family:'Itim'; }
+        .qty-controls { display:flex; align-items:center; gap:10px; }
+        .qty-btn { width:25px; height:25px; border-radius:50%; border:1px solid #ddd; background:white; cursor:pointer; display:flex; align-items:center; justify-content:center; font-weight:bold; }
+        .btn-clear-cart { background:#e74c3c; color:white; border:none; padding:10px; border-radius:10px; cursor:pointer; font-family:'Itim'; margin-bottom:15px; width:100%; }
+        .loading-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); display:none; justify-content:center; align-items:center; z-index:3000; font-size:1.5rem; font-family:'Itim'; }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading-overlay">กำลังโหลดความอร่อย...</div>
+    <nav>
+        <div class="logo">เอาหยังบ่ 🍲</div>
+        <div class="user-display" id="userDisplay" onclick="openLogin()">แต้ม: 0</div>
+    </nav>
+    <div class="hero">
+        <h1 id="greeting">สะบายดีพี่น้อง 🌸</h1>
+        <p>ยินดีต้อนรับสู่ร้านเอาหยังบ่</p>
+    </div>
+
+    <div class="container">
+        <div class="info-grid">
+            <div class="info-card">
+                <h2><i class="fas fa-heart"></i> เกี่ยวกับเรา</h2>
+                <p>ร้าน "เอาหยังบ่" เป็นร้านอาหารท้องถิ่นที่เน้นรสชาติต้นตำรับ ส่งตรงความอร่อยถึงหน้าบ้านคุณด้วยความใส่ใจ สด ใหม่ และสะอาด</p>
+            </div>
+            <div class="info-card">
+                <h2><i class="fas fa-phone-alt"></i> ติดต่อเรา</h2>
+                <p>ต้องการสอบถามข้อมูล หรือสั่งอาหารเร่งด่วน ติดต่อเราได้เลยค่ะ</p>
+                <div class="contact-links">
+                    <a href="tel:0929892085" class="contact-btn btn-phone"><i class="fas fa-phone"></i> 092-989-2085</a>
+                    <a href="https://line.me/ti/p/@nevermind" target="_blank" class="contact-btn btn-line"><i class="fab fa-line"></i> Line: @nevermind</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ZONE INDICATOR -->
+        <div class="zone-indicator no-zone" id="zoneIndicator">
+            <div class="zone-icon-wrap" id="zoneIconWrap">📍</div>
+            <div class="zone-info">
+                <div class="zone-name" id="zoneName">ยังไม่ได้ระบุโซน</div>
+                <div class="zone-status-text" id="zoneStatusText">ปักหมุดตำแหน่งเพื่อตรวจสอบโซนจัดส่งค่ะ</div>
+            </div>
+        </div>
+
+        <!-- LOCATION BOX -->
+        <div class="location-box">
+            <div id="locationInfo">กรุณาปักหมุดตำแหน่งจัดส่ง...</div>
+            <button class="btn btn-secondary" onclick="locateMe()">📍 หาตำแหน่งฉัน</button>
+        </div>
+        <div id="map"></div>
+
+        <!-- STORE SELECTOR -->
+        <div id="storeSection">
+            <div class="section-title"><i class="fas fa-store"></i> เลือกร้านค้า</div>
+            <div class="store-grid" id="storeGrid">
+                <div style="text-align:center;color:#999;padding:20px;grid-column:1/-1;">กำลังโหลดร้านค้า...</div>
+            </div>
+        </div>
+
+        <!-- MENU SECTION -->
+        <div id="menuSection" class="menu-section">
+            <button class="back-btn" onclick="backToStores()"><i class="fas fa-arrow-left"></i> กลับเลือกร้าน</button>
+            <div class="section-title" id="menuSectionTitle"><i class="fas fa-utensils"></i> เมนูทั้งหมด</div>
+            <div class="category-tabs" id="categoryTabs"></div>
+            <div class="menu-grid" id="menuGrid"></div>
+        </div>
+    </div>
+
+    <!-- CART BAR -->
+    <div class="cart-bar" id="cartBar" onclick="openPaymentModal()">
+        <i class="fas fa-shopping-cart"></i>
+        <span>ตะกร้าของฉัน: <span id="cartCount">0</span> รายการ</span>
+    </div>
+
+    <!-- LOGIN MODAL -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h2>สะสมแต้มกันเด้อ!</h2>
+            <p>กรุณากรอกเบอร์โทรศัพท์เพื่อรับแต้มสะสม</p>
+            <input type="tel" id="phoneInput" class="modal-input" placeholder="0XXXXXXXXX" maxlength="10">
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="handleLogin(false)">ข้าม</button>
+                <button class="btn btn-primary"   onclick="handleLogin(true)">เข้าสู่ระบบ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAYMENT MODAL -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <h2>สรุปคำสั่งซื้อ</h2>
+            <div id="paymentSummary" style="text-align:left;margin-bottom:20px;font-family:'Itim';line-height:1.6;"></div>
+            <button class="btn-clear-cart" onclick="clearCart()">ล้างตะกร้าทั้งหมด</button>
+            <div style="font-size:1.3rem;font-weight:bold;margin:20px 0;color:var(--primary);">ยอดรวมทั้งสิ้น: <span id="finalTotal">0</span> บาท</div>
+            <p>เลือกวิธีการชำระเงิน:</p>
+            <div class="payment-options">
+                <div class="payment-option" id="payCash" onclick="selectPayment('cash')">
+                    <i class="fas fa-money-bill-wave"></i><span>จ่ายเงินสดปลายทาง</span>
+                </div>
+                <div class="payment-option" id="payTransfer" onclick="selectPayment('transfer')">
+                    <i class="fas fa-qrcode"></i><span>สแกนจ่าย PromptPay</span>
+                </div>
+            </div>
+            <div id="qrSect" class="qr-display">
+                <p>สแกน QR Code เพื่อชำระเงิน</p>
+                <img src="YOUR_PROMPTPAY_QR_IMAGE_URL_HERE" alt="PromptPay QR">
+                <p style="font-size:0.9rem;color:#666;margin-top:10px;">เมื่อโอนเงินเรียบร้อยแล้ว กรุณากดปุ่มยืนยัน</p>
+            </div>
+            <div class="btn-group" style="margin-top:20px;">
+                <button class="btn btn-secondary" onclick="closePaymentModal()">ยกเลิก</button>
+                <button class="btn btn-primary"   onclick="confirmOrder()">ยืนยันการสั่งซื้อ</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    const SCRIPT_URL  = "https://script.google.com/macros/s/AKfycbz7JkH4FaObGM3DBLl8574VEEtsHuG_HYiinHt3cvFZSUvOGupvQy_ZsQsFHhmRuDV78w/exec";
+    const SHOP_COORDS = [17.293067, 103.969910];
+    const STORE_ICONS = { 'S01':'🍲','S02':'🍜','S03':'🍱','S04':'🥘','S05':'🍛','S06':'🌮','S07':'🥗','S08':'🍔' };
+
+    let config = { deliveryRadius:4.5, deliveryFee:10, productMarkup:1.15 };
+    let state  = {
+        user:null, cart:[], menu:[], stores:[],
+        currentStoreId:null, paymentMethod:'cash',
+        zones:[], detectedZoneId:'', detectedZoneName:''
+    };
+    let map, userMarker, autoRefreshTimer=null;
+
+    function showLoading(v) { document.getElementById('loading').style.display=v?'flex':'none'; }
+    function getStoreIcon(id) { return STORE_ICONS[id]||'🏪'; }
+    function calcDist(lat1,lon1,lat2,lon2) {
+        const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
+        const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+        return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+    }
+
+    // ── CONFIG ────────────────────────────────────────────
+    async function syncConfig() {
+        try {
+            const res=await fetch(`${SCRIPT_URL}?action=getSettings`);
+            const data=await res.json();
+            if (data.success) {
+                config.deliveryFee    = parseFloat(data.del_fee);
+                config.deliveryRadius = parseFloat(data.radius);
+                config.productMarkup  = 1+(parseFloat(data.markup)/100);
+            }
+        } catch(e) {}
+    }
+
+    // ── ZONES ─────────────────────────────────────────────
+    async function loadZones() {
+        try {
+            const res  = await fetch(`${SCRIPT_URL}?action=getZones`);
+            const data = await res.json();
+            state.zones = (data.success && data.zones) ? data.zones : [];
+        } catch(e) { state.zones=[]; }
+    }
+
+    // ตรวจสอบว่า GPS อยู่ในโซนไหน
+    function detectZoneFromCoords(lat, lng) {
+        let nearest='', nearestDist=Infinity;
+        state.zones.forEach(zone=>{
+            if (zone.status!=='open') return;
+            const d = calcDist(lat,lng,zone.lat,zone.lng);
+            if (d<=zone.radius && d<nearestDist) { nearestDist=d; nearest=zone; }
+        });
+        return nearest || null;
+    }
+
+    // อัปเดต zone indicator UI
+    function updateZoneIndicator(zone, noRider=false) {
+        const el     = document.getElementById('zoneIndicator');
+        const nameEl = document.getElementById('zoneName');
+        const statusEl = document.getElementById('zoneStatusText');
+        const iconEl = document.getElementById('zoneIconWrap');
+
+        if (!zone) {
+            el.className='zone-indicator no-zone';
+            iconEl.className='zone-icon-wrap'; iconEl.innerText='📍';
+            nameEl.innerText='ยังไม่ได้ระบุโซน';
+            statusEl.innerHTML='ปักหมุดตำแหน่งเพื่อตรวจสอบโซนจัดส่งค่ะ';
+            return;
+        }
+        if (noRider) {
+            el.className='zone-indicator no-rider';
+            iconEl.className='zone-icon-wrap orange'; iconEl.innerText='⚠️';
+            nameEl.innerText=zone.name;
+            statusEl.innerHTML=`<span style="color:#e65100;">ขณะนี้ไม่มีไรเดอร์ในโซนนี้ค่ะ — ลองสั่งใหม่อีกครั้งทีหลัง</span>`;
+        } else {
+            el.className='zone-indicator has-zone';
+            iconEl.className='zone-icon-wrap green'; iconEl.innerText='✅';
+            nameEl.innerText=zone.name;
+            statusEl.innerHTML=`โซนจัดส่ง: <strong>${zone.name}</strong> · รัศมี ${zone.radius} กม.`;
+        }
+    }
+
+    // ── MAP ───────────────────────────────────────────────
+    function initMap() {
+        map = L.map('map').setView(SHOP_COORDS,13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        L.marker(SHOP_COORDS).addTo(map).bindPopup('ร้านเอาหยังบ่').openPopup();
+
+        // วาดวงโซนบนแผนที่ (โหลดหลัง zones พร้อม)
+        map.on('click',function(e) {
+            if (userMarker) map.removeLayer(userMarker);
+            userMarker = L.marker(e.latlng).addTo(map);
+            updateLocationInfo(e.latlng);
+        });
+    }
+
+    function drawZoneCircles() {
+        state.zones.forEach(zone=>{
+            if (!zone.lat||!zone.lng) return;
+            L.circle([zone.lat,zone.lng],{
+                radius: zone.radius*1000,
+                color: zone.status==='open' ? '#27ae60' : '#aaa',
+                fillColor: zone.status==='open' ? '#27ae60' : '#aaa',
+                fillOpacity: 0.06, weight: 1.5, dashArray:'5,5'
+            }).addTo(map).bindPopup(`โซน: ${zone.name}`);
+        });
+    }
+
+    function locateMe() {
+        if (!navigator.geolocation) return alert("เบราว์เซอร์ไม่รองรับการระบุตำแหน่งค่ะ");
+        showLoading(true);
+        navigator.geolocation.getCurrentPosition(
+            (pos)=>{
+                const {latitude:lat,longitude:lng}=pos.coords;
+                if (userMarker) map.removeLayer(userMarker);
+                userMarker = L.marker([lat,lng]).addTo(map);
+                map.setView([lat,lng],15);
+                updateLocationInfo({lat,lng});
+                showLoading(false);
+            },
+            ()=>{ alert("ไม่สามารถเข้าถึงตำแหน่งได้ กรุณาปักหมุดเองค่ะ"); showLoading(false); }
+        );
+    }
+
+    function updateLocationInfo(latlng) {
+        const {lat,lng}=latlng;
+        const dist=calcDist(SHOP_COORDS[0],SHOP_COORDS[1],lat,lng);
+        const el=document.getElementById('locationInfo');
+
+        if (dist>config.deliveryRadius) {
+            el.innerHTML=`<span style="color:red">❌ ระยะทาง ${dist.toFixed(2)} กม. (เกินรัศมีส่ง ${config.deliveryRadius} กม.)</span>`;
+            updateZoneIndicator(null);
+            state.detectedZoneId=''; state.detectedZoneName='';
+            return;
+        }
+        el.innerHTML=`📍 ตำแหน่งจัดส่ง: ${lat.toFixed(4)}, ${lng.toFixed(4)} (${dist.toFixed(2)} กม.)`;
+
+        // ── Detect Zone ────────────────────────────────────
+        const zone = detectZoneFromCoords(lat,lng);
+        if (zone) {
+            state.detectedZoneId   = zone.zoneId;
+            state.detectedZoneName = zone.name;
+            updateZoneIndicator(zone, false);
+        } else {
+            // อยู่ในรัศมีแต่ไม่มีโซนครอบ → แสดงว่าไม่มีไรเดอร์
+            state.detectedZoneId=''; state.detectedZoneName='';
+            updateZoneIndicator({name:'นอกโซนจัดส่ง',radius:0}, true);
+        }
+    }
+
+    // ── AUTH ──────────────────────────────────────────────
+    function openLogin() { document.getElementById('loginModal').style.display='flex'; }
+    async function handleLogin(isConfirm) {
+        const phone=document.getElementById('phoneInput').value.trim();
+        if (isConfirm) {
+            if (phone.length!==10) return alert("กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (10 หลัก)");
+            showLoading(true);
+            try {
+                const res=await fetch(`${SCRIPT_URL}?action=getMember&phone=${phone}`);
+                const data=await res.json();
+                state.user=(data&&data.found)?{phone,name:data.name,points:data.points||0}:{phone,name:'ลูกค้าทั่วไป',points:0};
+            } catch(e){ alert("การเชื่อมต่อล้มเหลว"); showLoading(false); return; }
+            showLoading(false);
+        } else {
+            state.user={phone:'ลูกค้าทั่วไป',name:'ลูกค้าทั่วไป',points:0};
+        }
+        document.getElementById('loginModal').style.display='none';
+        updateUserUI();
+    }
+    function updateUserUI() {
+        document.getElementById('userDisplay').innerText=`แต้ม: ${state.user?.points||0}`;
+    }
+
+    // ── DATA ──────────────────────────────────────────────
+    async function loadData() {
+        try {
+            const [menuRes,storeRes]=await Promise.all([
+                fetch(`${SCRIPT_URL}?action=getMenu`),
+                fetch(`${SCRIPT_URL}?action=getAllStores`)
+            ]);
+            const menuData  = await menuRes.json();
+            const storeData = await storeRes.json();
+            state.menu   = Array.isArray(menuData)  ? menuData  : [];
+            state.stores = Array.isArray(storeData) ? storeData : [];
+            if (state.stores.length===0) {
+                const ids=[...new Set(state.menu.map(i=>i.storeId).filter(Boolean))];
+                state.stores=ids.map(id=>({storeId:id,storeName:`ร้าน ${id}`,phone:''}));
+            }
+            renderStores();
+            if (state.currentStoreId) renderMenuForStore(state.currentStoreId);
+        } catch(e) { console.error('loadData error',e); }
+    }
+
+    // ── STORES ────────────────────────────────────────────
+    function renderStores() {
+        const grid=document.getElementById('storeGrid');
+        if (!state.stores.length) { grid.innerHTML='<div style="text-align:center;color:#999;padding:20px;grid-column:1/-1;">ไม่พบร้านค้าค่ะ</div>'; return; }
+        grid.innerHTML='';
+        state.stores.forEach(store=>{
+            const cnt    = state.menu.filter(i=>i.storeId===store.storeId).length;
+            const active = store.storeId===state.currentStoreId;
+            const div    = document.createElement('div');
+            div.className=`store-card${active?' active':''}`;
+            div.innerHTML=`<div class="store-icon">${getStoreIcon(store.storeId)}</div><div class="store-name">${store.storeName}</div><div class="store-badge">${cnt} เมนู</div>`;
+            div.onclick=()=>selectStore(store.storeId,store.storeName,div);
+            grid.appendChild(div);
+        });
+    }
+
+    function selectStore(storeId,storeName,el) {
+        state.currentStoreId=storeId;
+        document.querySelectorAll('.store-card').forEach(c=>c.classList.remove('active'));
+        el.classList.add('active');
+        const store=state.stores.find(s=>s.storeId===storeId);
+        document.getElementById('menuSectionTitle').innerHTML=`<i class="fas fa-utensils"></i> เมนู${store?store.storeName:storeName}`;
+        renderMenuForStore(storeId);
+        document.getElementById('menuSection').scrollIntoView({behavior:'smooth',block:'start'});
+    }
+
+    function backToStores() {
+        state.currentStoreId=null;
+        document.getElementById('menuSection').classList.remove('visible');
+        document.querySelectorAll('.store-card').forEach(c=>c.classList.remove('active'));
+        document.getElementById('storeSection').scrollIntoView({behavior:'smooth',block:'start'});
+    }
+
+    function renderMenuForStore(storeId) {
+        const filtered=state.menu.filter(i=>i.storeId===storeId);
+        const cats=[...new Set(filtered.map(i=>i.category).filter(Boolean))];
+        renderCategories(cats);
+        renderMenu(filtered,'ทั้งหมด');
+        document.getElementById('menuSection').classList.add('visible');
+    }
+
+    function renderCategories(cats) {
+        const c=document.getElementById('categoryTabs');
+        c.innerHTML=`<div class="tab active" data-cat="ทั้งหมด" onclick="filterCategory('ทั้งหมด',this)">ทั้งหมด</div>`;
+        cats.forEach(cat=>{ c.innerHTML+=`<div class="tab" data-cat="${cat}" onclick="filterCategory('${cat}',this)">${cat}</div>`; });
+    }
+
+    function filterCategory(cat,el) {
+        document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+        el.classList.add('active');
+        const items=state.menu.filter(i=>i.storeId===state.currentStoreId);
+        renderMenu(items,cat);
+    }
+
+    function renderMenu(items,cat) {
+        const grid=document.getElementById('menuGrid');
+        grid.innerHTML='';
+        const toShow=(cat==='ทั้งหมด')?items:items.filter(i=>i.category===cat);
+        if (!toShow.length) { grid.innerHTML='<div class="menu-empty">ไม่มีเมนูในหมวดนี้ค่ะ 🍽️</div>'; return; }
+        toShow.forEach(item=>{
+            const price=Math.ceil(item.price*config.productMarkup);
+            const card=document.createElement('div');
+            card.className='menu-item';
+            card.innerHTML=`<img src="${item.img||'https://via.placeholder.com/300x150?text=อาหาร'}" class="menu-img" onerror="this.src='https://via.placeholder.com/300x150?text=อาหาร'"><div class="menu-info"><h3>${item.name}</h3><div class="menu-price">${price} บาท</div></div><button class="add-btn">เพิ่มลงตะกร้า</button>`;
+            card.onclick=()=>addToCart(item.name,price,state.currentStoreId);
+            grid.appendChild(card);
+        });
+    }
+
+    // ── CART ──────────────────────────────────────────────
+    function addToCart(name,price,storeId) {
+        if (state.cart.length>0 && state.cart[0].storeId!==storeId) {
+            if (!confirm("ตะกร้ามีอาหารจากร้านอื่น ต้องการล้างและเลือกร้านใหม่ไหม?")) return;
+            state.cart=[]; updateCartBar();
+        }
+        const ex=state.cart.find(i=>i.name===name);
+        ex ? ex.qty++ : state.cart.push({name,price,qty:1,storeId});
+        updateCartBar();
+    }
+    function updateCartBar() {
+        document.getElementById('cartCount').innerText=state.cart.reduce((a,i)=>a+i.qty,0);
+    }
+    function updateQty(index,delta) {
+        state.cart[index].qty+=delta;
+        if (state.cart[index].qty<1) state.cart.splice(index,1);
+        updateCartBar(); renderPaymentSummary();
+    }
+    function clearCart() {
+        if (confirm("ต้องการล้างตะกร้าทั้งหมดใช่ไหมคะ?")) { state.cart=[]; updateCartBar(); renderPaymentSummary(); }
+    }
+
+    // ── PAYMENT ───────────────────────────────────────────
+    function openPaymentModal() {
+        if (!state.cart.length) return alert("ยังไม่มีอาหารในตะกร้าเลยค่ะ");
+        if (!userMarker) return alert("กรุณาปักหมุดตำแหน่งจัดส่งก่อนสั่งซื้อค่ะ");
+        const {lat,lng}=userMarker.getLatLng();
+        const dist=calcDist(SHOP_COORDS[0],SHOP_COORDS[1],lat,lng);
+        if (dist>config.deliveryRadius) return alert(`ขออภัยค่ะ ระยะทาง ${dist.toFixed(2)} กม. เกินรัศมีบริการ ${config.deliveryRadius} กม.`);
+        document.getElementById('paymentModal').style.display='flex';
+        renderPaymentSummary();
+    }
+    function closePaymentModal() { document.getElementById('paymentModal').style.display='none'; }
+
+    function renderPaymentSummary() {
+        const div=document.getElementById('paymentSummary');
+        const storeId=state.cart.length>0?state.cart[0].storeId:null;
+        const store=state.stores.find(s=>s.storeId===storeId);
+        let html=`<strong>🏪 ร้าน: ${store?store.storeName:storeId||'ไม่ระบุ'}</strong>`;
+        if (state.detectedZoneName) html+=` <small style="color:var(--info);">| โซน ${state.detectedZoneName}</small>`;
+        html+='<br><br><strong>รายการสั่งซื้อ:</strong><br>';
+        let subtotal=0;
+        state.cart.forEach((item,idx)=>{
+            const t=item.price*item.qty; subtotal+=t;
+            html+=`<div class="cart-item"><span>${item.name}</span><div class="qty-controls"><button class="qty-btn" onclick="updateQty(${idx},-1)">-</button><span>${item.qty}</span><button class="qty-btn" onclick="updateQty(${idx},1)">+</button><span style="margin-left:10px;">${t.toFixed(0)} ฿</span></div></div>`;
+        });
+        html+=`<hr style="margin:10px 0;border:0;border-top:1px solid #ddd;"><div style="display:flex;justify-content:space-between;"><span>ค่าสินค้า:</span><span>${subtotal.toFixed(0)} บาท</span></div><div style="display:flex;justify-content:space-between;"><span>ค่าจัดส่ง:</span><span>${config.deliveryFee} บาท</span></div>`;
+        div.innerHTML=html;
+        document.getElementById('finalTotal').innerText=(subtotal+config.deliveryFee).toFixed(0);
+    }
+
+    function selectPayment(method) {
+        state.paymentMethod=method;
+        document.getElementById('payCash').classList.toggle('active',method==='cash');
+        document.getElementById('payTransfer').classList.toggle('active',method==='transfer');
+        document.getElementById('qrSect').style.display=method==='transfer'?'block':'none';
+    }
+
+    // ── ORDER ─────────────────────────────────────────────
+    async function confirmOrder() {
+        if (!state.user) { closePaymentModal(); openLogin(); return; }
+        showLoading(true);
+        const subtotal=state.cart.reduce((a,i)=>a+(i.price*i.qty),0);
+        const total=subtotal+config.deliveryFee;
+        const {lat,lng}=userMarker.getLatLng();
+        const storeId=state.cart.length>0?state.cart[0].storeId:'S01';
+        const orderData={
+            phone:state.user.phone, customerName:state.user.name,
+            total, items:state.cart.map(i=>({name:i.name,qty:i.qty})),
+            lat, lng,
+            address:`ละติจูด ${lat.toFixed(4)}, ลองจิจูด ${lng.toFixed(4)}`,
+            paymentMethod:state.paymentMethod,
+            storeId,
+            zoneId:state.detectedZoneId  // ← ส่ง zoneId ไปด้วย
+        };
+        try {
+            const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(orderData)});
+            const result=await res.json();
+            if (result.status==='success') {
+                state.user.points=result.totalPoints;
+                updateUserUI();
+                alert(`สั่งซื้อสำเร็จ! ได้รับ ${result.points} แต้ม รวมเป็น ${result.totalPoints} แต้มเด้อจ้า 🎉`);
+                state.cart=[]; updateCartBar(); closePaymentModal();
+            } else { alert("เกิดข้อผิดพลาด: "+result.message); }
+        } catch(e) { alert("เกิดข้อผิดพลาดในการส่งคำสั่งซื้อ"); }
+        showLoading(false);
+    }
+
+    // ── GREETING ──────────────────────────────────────────
+    function updateGreeting() {
+        const h=new Date().getHours();
+        const el=document.getElementById('greeting');
+        if (h<12)      el.innerText="สะบายดีตอนเช้าเจ้าค่ะ ☀️";
+        else if (h<17) el.innerText="สะบายดีตอนบ่ายเจ้าค่ะ 🌤️";
+        else           el.innerText="สะบายดีตอนแลงเจ้าค่ะ 🌙";
+    }
+
+    // ── AUTO REFRESH ───────────────────────────────────────
+    function startAutoRefresh() {
+        if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+        autoRefreshTimer=setInterval(()=>{ updateGreeting(); loadData(); }, 60000);
+    }
+
+    // ── INIT ──────────────────────────────────────────────
+    window.onload=async()=>{
+        showLoading(true);
+        await syncConfig();
+        await loadZones();   // โหลดโซนก่อน
+        initMap();
+        drawZoneCircles();   // วาดวงโซนบนแผนที่
+        updateGreeting();
+        await loadData();
+        showLoading(false);
+        startAutoRefresh();
+    };
+    </script>
+</body>
+</html>

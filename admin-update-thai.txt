@@ -1,0 +1,36 @@
+ฟังก์ชัน getAdminSummary ที่อัปเดตแล้ว (ภาษาไทย)
+
+```javascript
+function getAdminSummary() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('ออเดอร์');
+    if (!sheet) return jsonResponse({ totalSales: 0, completedJobs: 0, netProfit: 0 });
+    var data = sheet.getDataRange().getValues();
+    var totalSales = 0;
+    var completedJobs = 0;
+    for (var i = 1; i < data.length; i++) {
+      var total = parseFloat(data[i][4]) || 0; // ยอดรวม (คอลัมน์ E)
+      var status = data[i][5]; // สถานะ (คอลัมน์ F)
+      totalSales += total;
+      if (status === 'ส่งสำเร็จ') { completedJobs++; }
+    }
+    // ระบบใหม่: รider ได้ 15 บาทต่อออเดอร์สำเร็จ (จากค่าส่ง 10 + โบนัส 5)
+    var riderEarnings = completedJobs * 15;
+    // กำไรแพลตฟอร์ม = ยอดขายรวม - รายได้รider
+    var netProfit = totalSales - riderEarnings;
+    return jsonResponse({ totalSales: totalSales, completedJobs: completedJobs, netProfit: netProfit });
+  } catch (err) { return jsonResponse({ error: err.toString() }); }
+}
+```
+
+คำอธิบายการเปลี่ยนแปลง:
+1. ลบการคำนวณเก่าที่ใช้ `completedJobs * 3` ซึ่งไม่ตรงกับระบบจริง
+2. คำนวณรายได้รider ตามจริง: `completedJobs * 15` (ค่าส่ง 10 บาท + โบนัส 5 บาทต่อออเดอร์)
+3. คำนวณกำไรแพลตฟอร์ม: `ยอดขายรวม - รายได้รider`
+4. รักษาตรรกะการนับยอดขายรวมและจำนวนงานสำเร็จไว้เหมือนเดิม
+
+ฟังก์ชันนี้จะคืนค่า JSON ที่มี:
+- totalSales: ยอดขายรวมจากทุกออเดอร์ (บาท)
+- completedJobs: จำนวนออเดอร์ที่สถานะเป็น 'ส่งสำเร็จ' (จำนวน)
+- netProfit: กำไรแพลตฟอร์มหลังหักรายได้ที่ต้องจ่ายให้รider (บาท)
