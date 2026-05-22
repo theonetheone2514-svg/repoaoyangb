@@ -71,8 +71,10 @@ function getMerchantStatement(e) {
           const totalPrice = parseFloat(row[totalColIndex]) || 0;
           const status = row[statusColIndex] || '';
           
-            // คำนวณยอดสุทธิ (หักค่าธรรมเนียม 15%)
-            const netIncome = totalPrice * 0.85;
+            // คำนวณยอดสุทธิ (หักค่าธรรมเนียม 15% จากค่าอาหารเท่านั้น ไม่รวมค่าส่ง)
+            var deliveryFee = 10;
+            var foodPrice = Math.max(0, totalPrice - deliveryFee);
+            var netIncome = foodPrice * 0.85 + deliveryFee;
             
             grossTotal += totalPrice;
             netTotal += netIncome;
@@ -80,7 +82,8 @@ function getMerchantStatement(e) {
             filteredData.push({
               time: rowDate.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
               items: items,
-              foodPrice: totalPrice,
+              foodPrice: foodPrice,
+              deliveryFee: deliveryFee,
               netIncome: netIncome,
               status: status
             });

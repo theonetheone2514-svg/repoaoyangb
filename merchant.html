@@ -517,11 +517,15 @@
                         </div>
                         <div class="stmt-summary">
                             <div class="stmt-box">
-                                <small>ยอดขายอาหาร</small>
+                                <small>ยอดขายอาหาร (รวม)</small>
                                 <div class="stmt-val" id="stmtGross">0 บาท</div>
                             </div>
+                            <div class="stmt-box" style="background:#fef3e2;">
+                                <small>ค่าส่ง</small>
+                                <div class="stmt-val" id="stmtDelivery" style="color:#E65100;">0 บาท</div>
+                            </div>
                             <div class="stmt-box net">
-                                <small>ยอดรับสุทธิ (หัก 15%)</small>
+                                <small>ยอดรับสุทธิ (หัก 15% เฉพาะอาหาร)</small>
                                 <div class="stmt-val" id="stmtNet">0 บาท</div>
                             </div>
                             <div class="stmt-box orders">
@@ -531,10 +535,10 @@
                         </div>
                         <table class="menu-table">
                             <thead>
-                                <tr><th>เวลา</th><th>รายการ</th><th>ยอดอาหาร</th><th>รับสุทธิ</th></tr>
+                                <tr><th>เวลา</th><th>รายการ</th><th>ค่าอาหาร</th><th>ค่าส่ง</th><th>รับสุทธิ</th></tr>
                             </thead>
                             <tbody id="stmtTbody">
-                                <tr><td colspan="4" style="text-align:center; padding:20px; color:#aaa;">เลือกวันที่เพื่อดู Statement</td></tr>
+                                <tr><td colspan="5" style="text-align:center; padding:20px; color:#aaa;">เลือกวันที่เพื่อดู Statement</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -1055,26 +1059,29 @@
             const result = await res.json();
             if (result.success || Array.isArray(result)) {
                 const data = Array.isArray(result) ? result : result.data;
-                let gross = 0, net = 0, count = 0;
+                let gross = 0, delivery = 0, net = 0, count = 0;
                 let html = '';
                 if (data && data.length > 0) {
                     data.forEach(row => {
-                        gross += (row.foodPrice || 0);
-                        net   += (row.netIncome  || 0);
+                        gross    += (row.foodPrice || 0);
+                        delivery += (row.deliveryFee || 0);
+                        net      += (row.netIncome || 0);
                         count++;
                         html += `<tr>
                             <td>${row.time || '--:--'}</td>
                             <td>${row.items || 'ไม่ระบุ'}</td>
                             <td>${(row.foodPrice || 0).toFixed(0)}</td>
+                            <td>${(row.deliveryFee || 0).toFixed(0)}</td>
                             <td style="color:var(--success);font-weight:600;">${(row.netIncome || 0).toFixed(0)}</td>
                         </tr>`;
                     });
                 }
                 document.getElementById('stmtTbody').innerHTML = html ||
-                    '<tr><td colspan="4" style="text-align:center;padding:20px;color:#aaa;">ไม่มีรายการขายในวันที่เลือก</td></tr>';
-                document.getElementById('stmtGross').innerText = `${gross.toLocaleString()} บาท`;
-                document.getElementById('stmtNet').innerText   = `${net.toLocaleString()} บาท`;
-                document.getElementById('stmtCount').innerText = `${count} รายการ`;
+                    '<tr><td colspan="5" style="text-align:center;padding:20px;color:#aaa;">ไม่มีรายการขายในวันที่เลือก</td></tr>';
+                document.getElementById('stmtGross').innerText    = `${gross.toLocaleString()} บาท`;
+                document.getElementById('stmtDelivery').innerText = `${delivery.toLocaleString()} บาท`;
+                document.getElementById('stmtNet').innerText      = `${net.toLocaleString()} บาท`;
+                document.getElementById('stmtCount').innerText    = `${count} รายการ`;
             } else {
                 alert("เกิดข้อผิดพลาด: " + (result.message || "ไม่พบข้อมูล"));
             }
