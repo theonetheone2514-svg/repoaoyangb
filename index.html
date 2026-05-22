@@ -223,7 +223,7 @@
     let state  = {
         user:null, cart:[], menu:[], stores:[],
         currentStoreId:null, paymentMethod:'cash',
-        zones:[], detectedZoneId:'', detectedZoneName:''
+        zones:[], detectedZoneId:'', detectedZoneName:'', selectedLocation:null
     };
     let map, userMarker, autoRefreshTimer=null;
 
@@ -305,6 +305,7 @@
         map.on('click',function(e) {
             if (userMarker) map.removeLayer(userMarker);
             userMarker = L.marker(e.latlng).addTo(map);
+            state.selectedLocation = { lat: e.latlng.lat, lng: e.latlng.lng };
             updateLocationInfo(e.latlng);
         });
     }
@@ -330,6 +331,7 @@
                 if (userMarker) map.removeLayer(userMarker);
                 userMarker = L.marker([lat,lng]).addTo(map);
                 map.setView([lat,lng],15);
+                state.selectedLocation = { lat, lng };
                 updateLocationInfo({lat,lng});
                 showLoading(false);
             },
@@ -500,8 +502,8 @@
     // ── PAYMENT ───────────────────────────────────────────
     function openPaymentModal() {
         if (!state.cart.length) return alert("ยังไม่มีอาหารในตะกร้าเลยค่ะ");
-        if (!userMarker) return alert("กรุณาปักหมุดตำแหน่งจัดส่งก่อนสั่งซื้อค่ะ");
-        const {lat,lng}=userMarker.getLatLng();
+        if (!state.selectedLocation) return alert("กรุณาปักหมุดตำแหน่งจัดส่งก่อนสั่งซื้อค่ะ");
+        const {lat,lng}=state.selectedLocation;
         const dist=calcDist(SHOP_COORDS[0],SHOP_COORDS[1],lat,lng);
         if (dist>config.deliveryRadius) return alert(`ขออภัยค่ะ ระยะทาง ${dist.toFixed(2)} กม. เกินรัศมีบริการ ${config.deliveryRadius} กม.`);
         document.getElementById('paymentModal').style.display='flex';
@@ -539,7 +541,7 @@
         showLoading(true);
         const subtotal=state.cart.reduce((a,i)=>a+(i.price*i.qty),0);
         const total=subtotal+config.deliveryFee;
-        const {lat,lng}=userMarker.getLatLng();
+        const {lat,lng}=state.selectedLocation;
         const storeId=state.cart.length>0?state.cart[0].storeId:'S01';
         const orderData={
             phone:state.user.phone, customerName:state.user.name,
