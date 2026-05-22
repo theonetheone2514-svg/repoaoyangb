@@ -72,7 +72,7 @@ function getMerchantStatement(e) {
           const status = row[statusColIndex] || '';
           
             // คำนวณยอดสุทธิ (หักค่าธรรมเนียม 15% จากค่าอาหารเท่านั้น ไม่รวมค่าส่ง)
-            var deliveryFee = 10;
+            var deliveryFee = getDeliveryFee();
             var foodPrice = Math.max(0, totalPrice - deliveryFee);
             var netIncome = foodPrice * 0.85 + deliveryFee;
             
@@ -111,11 +111,10 @@ function getMerchantStatement(e) {
   }
 }
 
-// ต้องเพิ่มการจัดการใน doGet เพื่อรับ action=getMerchantStatement
-// เพิ่มส่วนนี้เข้าไปในฟังก์ชัน doGet ที่มีอยู่เดิม:
-// ============================================
-// GET - ดึงข้อมูลเมนู / สมาชิก / สั่งซื้อ / Statement
-// ============================================
+// === การนำไปใช้ใน doGet ===
+// ต้องเพิ่ม action ใน doGet และ import ฟังก์ชัน getDeliveryFee() จาก apps-script-updated.gs
+// (หรือก็อป getSetting / getSettingsSheet / getDeliveryFee มาไว้ในไฟล์นี้ด้วย)
+//
 // function doGet(e) {
 //   const action = e.parameter?.action;
 //   
@@ -125,6 +124,11 @@ function getMerchantStatement(e) {
 //   if (action === 'getMerchantStatement') {
 //     return getMerchantStatement(e);
 //   }
+//   if (action === 'getSettings') {
+//     return getSettings();  // อยู่ใน apps-script-updated.gs
+//   }
+//   // ... ส่วนที่เหลือ ...
+// }
 //   
 //   // ... ส่วนที่เหลือ ...
 // }

@@ -40,6 +40,19 @@ function doGet(e) {
     return saveCustomerLocation(e.parameter);
   }
   
+  // ดึงข้อมูล Statement ของร้านค้า
+  if (action === 'getMerchantStatement') {
+    return getMerchantStatement(e);
+  }
+  
+  // ดึงหรือบันทึกการตั้งค่าระบบ
+  if (action === 'getSettings') {
+    return getSettings();
+  }
+  if (action === 'updateSettings') {
+    return updateSettings(e.parameter);
+  }
+  
   // ดึงข้อมูลเมนู (ค่าเริ่มต้น)
   return getMenu();
 }
@@ -447,6 +460,90 @@ ${locationText}
   } catch (err) {
     console.log("LINE Messaging API error:", err);
   }
+}
+
+// ============================================
+// ฟังก์ชันตั้งค่าระบบ (Settings Sheet)
+// ============================================
+function getSettingsSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Settings');
+  if (!sheet) {
+    sheet = ss.insertSheet('Settings');
+    sheet.appendRow(['key', 'value']);
+    sheet.appendRow(['delivery_fee', '10']);
+    sheet.appendRow(['radius', '4.5']);
+    sheet.appendRow(['markup', '15']);
+    sheet.getRange(1, 1, 1, 2).setFontWeight('bold');
+  }
+  return sheet;
+}
+
+function getSetting(key, defaultValue) {
+  try {
+    var sheet = getSettingsSheet();
+    var data = sheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][0] === key) {
+        return data[i][1];
+      }
+    }
+  } catch (e) {}
+  return defaultValue;
+}
+
+function setSetting(key, value) {
+  var sheet = getSettingsSheet();
+  var data = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][0] === key) {
+      sheet.getRange(i + 1, 2).setValue(value);
+      return;
+    }
+  }
+  sheet.appendRow([key, value]);
+}
+
+function getSettings() {
+  try {
+    var deliveryFee = parseFloat(getSetting('delivery_fee', '10')) || 10;
+    var radius = parseFloat(getSetting('radius', '4.5')) || 4.5;
+    var markup = parseFloat(getSetting('markup', '15')) || 15;
+    
+    return jsonResponse({
+      success: true,
+      del_fee: deliveryFee,
+      radius: radius,
+      markup: markup
+    });
+  } catch (err) {
+    return jsonResponse({
+      success: true,
+      del_fee: 10,
+      radius: 4.5,
+      markup: 15
+    });
+  }
+}
+
+function updateSettings(params) {
+  try {
+    var fee = params.fee;
+    var radius = params.radius;
+    var markup = params.markup;
+    
+    if (fee) setSetting('delivery_fee', fee);
+    if (radius) setSetting('radius', radius);
+    if (markup) setSetting('markup', markup);
+    
+    return jsonResponse({ success: true, message: 'บันทึกการตั้งค่าเรียบร้อย' });
+  } catch (err) {
+    return jsonResponse({ success: false, message: err.toString() });
+  }
+}
+
+function getDeliveryFee() {
+  return parseFloat(getSetting('delivery_fee', '10')) || 10;
 }
 
 // ============================================
