@@ -318,7 +318,7 @@
                 color: zone.status==='open' ? '#27ae60' : '#aaa',
                 fillColor: zone.status==='open' ? '#27ae60' : '#aaa',
                 fillOpacity: 0.06, weight: 1.5, dashArray:'5,5'
-            }).addTo(map).bindPopup(`โซน: ${zone.name}`);
+            }).addTo(map).bindTooltip(`โซน: ${zone.name}`, {sticky: true});
         });
     }
 
