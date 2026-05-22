@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เอาหยังบ่ | สั่งออนไลน์ + สะสมแต้ม</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#2c3e50">
+    <meta name="theme-color" content="#9C4A35">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="เอาหยังบ่">
@@ -14,14 +14,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --primary:#2c3e50; --accent:#a65d37; --success:#4caf50; --bg:#fdfbf7; --white:#ffffff; }
+        :root { --primary:#9C4A35; --accent:#E65100; --success:#4caf50; --bg:#FFF8E7; --white:#ffffff; --hot:#e53935; --gold:#ffb74d; }
         body { font-family:'Itim',cursive; background-color:var(--bg); margin:0; color:#333; }
-        nav { background:var(--primary); color:white; padding:1rem; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:1000; box-shadow:0 2px 10px rgba(0,0,0,0.2); }
+        nav { background:var(--primary); color:white; padding:1rem; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:1000; box-shadow:0 2px 15px rgba(0,0,0,0.25); }
         .logo { font-size:1.5rem; font-weight:bold; }
         .user-display { font-size:1rem; cursor:pointer; background:rgba(255,255,255,0.2); padding:5px 15px; border-radius:20px; }
-        .hero { background:linear-gradient(rgba(44,62,80,0.8),rgba(44,62,80,0.8)),url('https://images.unsplash.com/photo-1504674900247-0865df9f7f50?auto=format&fit=crop&w=1000&q=80'); background-size:cover; background-position:center; color:white; padding:60px 20px; text-align:center; }
-        .hero h1 { font-size:2.5rem; margin-bottom:10px; }
-        .hero p { font-size:1.2rem; opacity:0.9; }
+.hero { background:linear-gradient(rgba(130,60,40,0.85),rgba(200,80,40,0.7)),url('https://images.unsplash.com/photo-1555126634-323283e090fa?auto=format&fit=crop&w=1200&q=80'); background-size:cover; background-position:center; color:white; padding:70px 20px; text-align:center; }
+.hero h1 { font-size:2.8rem; margin-bottom:8px; text-shadow:2px 2px 8px rgba(0,0,0,0.3); }
+.hero p { font-size:1.3rem; opacity:0.95; }
         .container { max-width:1000px; margin:0 auto; padding:20px; }
         .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:30px; }
         @media(max-width:768px){.info-grid{grid-template-columns:1fr;}}
@@ -31,7 +31,7 @@
         .info-card p { font-size:1.1rem; line-height:1.6; color:#666; }
         .contact-links { display:flex; flex-direction:column; gap:12px; margin-top:15px; }
         .contact-btn { display:flex; align-items:center; gap:12px; padding:12px 20px; border-radius:15px; text-decoration:none; font-family:'Itim'; font-weight:600; transition:0.3s; }
-        .btn-phone { background:#eef2f7; color:#2c3e50; border:1px solid #ddd; }
+        .btn-phone { background:#fff3e0; color:#9C4A35; border:1px solid #ddd; }
         .btn-line  { background:#00B900; color:white; }
         .contact-btn:hover { transform:scale(1.02); filter:brightness(90%); }
 
@@ -63,7 +63,7 @@
         .store-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:15px; margin-bottom:25px; }
         .store-card { background:white; border:2px solid #eee; border-radius:20px; padding:20px 15px; text-align:center; cursor:pointer; transition:0.3s; box-shadow:0 3px 10px rgba(0,0,0,0.05); }
         .store-card:hover { border-color:var(--accent); transform:translateY(-3px); }
-        .store-card.active { border-color:var(--primary); background:#eef2f7; }
+        .store-card.active { border-color:var(--primary); background:#fff3e0; }
         .store-icon { font-size:2.2rem; margin-bottom:8px; }
         .store-name { font-size:1.05rem; font-weight:bold; color:var(--primary); }
         .store-badge { display:inline-block; background:var(--accent); color:white; font-size:0.75rem; padding:2px 8px; border-radius:10px; margin-top:5px; }
@@ -75,16 +75,21 @@
         .tab { padding:10px 20px; background:white; border:2px solid var(--primary); border-radius:25px; cursor:pointer; white-space:nowrap; transition:0.3s; }
         .tab.active { background:var(--primary); color:white; }
         .menu-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:20px; }
-        .menu-item { background:white; border-radius:20px; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,0.1); transition:0.3s; cursor:pointer; }
-        .menu-item:hover { transform:translateY(-5px); }
-        .menu-img { width:100%; height:150px; object-fit:cover; }
-        .menu-info { padding:15px; }
-        .menu-info h3 { margin:0; font-size:1.2rem; }
-        .menu-price { color:var(--accent); font-weight:bold; font-size:1.1rem; margin-top:5px; }
-        .add-btn { width:100%; padding:10px; background:var(--primary); color:white; border:none; border-radius:0 0 20px 20px; cursor:pointer; font-family:'Itim'; }
+.menu-item { background:white; border-radius:20px; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,0.1); transition:0.3s; cursor:pointer; position:relative; }
+.menu-item:hover { transform:translateY(-5px); box-shadow:0 8px 25px rgba(0,0,0,0.15); }
+.menu-img { width:100%; height:200px; object-fit:cover; }
+.menu-badge { position:absolute; top:10px; left:10px; padding:4px 12px; border-radius:20px; font-size:0.75rem; font-weight:bold; z-index:2; }
+.menu-badge.hot { background:var(--hot); color:white; }
+.menu-badge.reco { background:var(--gold); color:#5d4037; right:10px; left:auto; }
+.menu-info { padding:15px; }
+.menu-info h3 { margin:0; font-size:1.25rem; }
+.menu-price { color:var(--accent); font-weight:bold; font-size:1.4rem; margin-top:5px; }
+.add-btn { width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:0 0 20px 20px; cursor:pointer; font-family:'Itim'; font-size:1.05rem; font-weight:bold; transition:0.2s; }
+.add-btn:hover { background:#b85a3a; }
         .menu-empty { text-align:center; padding:40px; color:#999; font-size:1.1rem; grid-column:1/-1; }
 
-        .cart-bar { position:fixed; bottom:20px; right:20px; background:var(--accent); color:white; padding:15px 30px; border-radius:30px; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.3); font-weight:bold; z-index:1000; display:flex; align-items:center; gap:10px; }
+        .cart-bar { position:fixed; bottom:20px; right:20px; background:var(--accent); color:white; padding:15px 30px; border-radius:30px; cursor:pointer; box-shadow:0 4px 20px rgba(230,81,0,0.4); font-weight:bold; z-index:1000; display:flex; align-items:center; gap:10px; font-size:1.1rem; animation:cartPulse 2s infinite; }
+@keyframes cartPulse { 0%{box-shadow:0 4px 20px rgba(230,81,0,0.4);} 50%{box-shadow:0 4px 30px rgba(230,81,0,0.7);} 100%{box-shadow:0 4px 20px rgba(230,81,0,0.4);} }
         .modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:none; justify-content:center; align-items:center; z-index:2000; }
         .modal-content { background:white; padding:30px; border-radius:30px; max-width:400px; width:90%; text-align:center; position:relative; max-height:90vh; overflow-y:auto; }
         .modal-content h2 { color:var(--primary); margin-bottom:20px; }
@@ -95,8 +100,8 @@
         .btn-secondary { background:#eee; color:#666; }
         .payment-options { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
         .payment-option { padding:15px; border:2px solid #ddd; border-radius:15px; cursor:pointer; display:flex; align-items:center; gap:15px; transition:0.3s; font-family:'Itim'; font-size:1.1rem; }
-        .payment-option.active { border-color:var(--primary); background:#eef2f7; }
-        .payment-option i { font-size:1.5rem; color:var(--primary); }
+.payment-option.active { border-color:var(--primary); background:#fff3e0; }
+.payment-option i { font-size:1.5rem; color:var(--primary); }
         .qr-display { margin-top:20px; display:none; }
         .qr-display img { width:200px; height:200px; border:5px solid white; box-shadow:0 0 10px rgba(0,0,0,0.1); }
         .cart-item { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-family:'Itim'; }
@@ -107,25 +112,25 @@
     </style>
 </head>
 <body>
-    <div id="loading" class="loading-overlay">กำลังโหลดความอร่อย...</div>
+    <div id="loading" class="loading-overlay">กำลังจัดจานให้เด้อ...</div>
     <nav>
         <div class="logo">เอาหยังบ่ 🍲</div>
         <div class="user-display" id="userDisplay" onclick="openLogin()">แต้ม: 0</div>
     </nav>
     <div class="hero">
-        <h1 id="greeting">สะบายดีพี่น้อง 🌸</h1>
-        <p>ยินดีต้อนรับสู่ร้านเอาหยังบ่</p>
+        <h1 id="greeting">หิวเด้... สั่งโลด! 🍜</h1>
+        <p>จัดหนัก จัดเต็ม อร่อยถึงบ้าน เด้ออออ</p>
     </div>
 
     <div class="container">
         <div class="info-grid">
             <div class="info-card">
-                <h2><i class="fas fa-heart"></i> เกี่ยวกับเรา</h2>
-                <p>ร้าน "เอาหยังบ่" เป็นร้านอาหารท้องถิ่นที่เน้นรสชาติต้นตำรับ ส่งตรงความอร่อยถึงหน้าบ้านคุณด้วยความใส่ใจ สด ใหม่ และสะอาด</p>
+                <h2><i class="fas fa-heart"></i> หิวบ่ เอาหยังบ่!</h2>
+                <p>ร้าน "เอาหยังบ่" รวมของกินแซ่บ ๆ ถึงบ้านเด้อ! เครื่องดื่มสดชื่น ขนมหวานนุ่มละมุน สั่งเลยเดี๋ยวนี้ หิวบ่... สั่งโลด!</p>
             </div>
             <div class="info-card">
                 <h2><i class="fas fa-phone-alt"></i> ติดต่อเรา</h2>
-                <p>ต้องการสอบถามข้อมูล หรือสั่งอาหารเร่งด่วน ติดต่อเราได้เลยค่ะ</p>
+                <p>อยากสอบถาม หรือสั่งด่วน ๆ ทักมาโลดเด้อ!</p>
                 <div class="contact-links">
                     <a href="tel:0929892085" class="contact-btn btn-phone"><i class="fas fa-phone"></i> 092-989-2085</a>
                     <a href="https://line.me/ti/p/@nevermind" target="_blank" class="contact-btn btn-line"><i class="fab fa-line"></i> Line: @nevermind</a>
@@ -144,7 +149,7 @@
 
         <!-- LOCATION BOX -->
         <div class="location-box">
-            <div id="locationInfo">กรุณาปักหมุดตำแหน่งจัดส่ง...</div>
+            <div id="locationInfo">📍 คลิกที่แผนที่เพื่อปักหมุดตำแหน่งจัดส่ง</div>
             <button class="btn btn-secondary" onclick="locateMe()">📍 หาตำแหน่งฉัน</button>
         </div>
         <div id="map"></div>
@@ -153,13 +158,13 @@
         <div id="storeSection">
             <div class="section-title"><i class="fas fa-store"></i> เลือกร้านค้า</div>
             <div class="store-grid" id="storeGrid">
-                <div style="text-align:center;color:#999;padding:20px;grid-column:1/-1;">กำลังโหลดร้านค้า...</div>
+                <div style="text-align:center;color:#999;padding:20px;grid-column:1/-1;">กำลังหาร้านแซ่บ ๆ...</div>
             </div>
         </div>
 
         <!-- MENU SECTION -->
         <div id="menuSection" class="menu-section">
-            <button class="back-btn" onclick="backToStores()"><i class="fas fa-arrow-left"></i> กลับเลือกร้าน</button>
+            <button class="back-btn" onclick="backToStores()"><i class="fas fa-arrow-left"></i> เลือกร้านอื่น</button>
             <div class="section-title" id="menuSectionTitle"><i class="fas fa-utensils"></i> เมนูทั้งหมด</div>
             <div class="category-tabs" id="categoryTabs"></div>
             <div class="menu-grid" id="menuGrid"></div>
@@ -176,11 +181,11 @@
     <div id="loginModal" class="modal">
         <div class="modal-content">
             <h2>สะสมแต้มกันเด้อ!</h2>
-            <p>กรุณากรอกเบอร์โทรศัพท์เพื่อรับแต้มสะสม</p>
+            <p>กรอกเบอร์โทรศัพท์ — สั่งครบ 100 บาท รับ 1 แต้ม เอาไปแลกของกินดี ๆ</p>
             <input type="tel" id="phoneInput" class="modal-input" placeholder="0XXXXXXXXX" maxlength="10">
             <div class="btn-group">
-                <button class="btn btn-secondary" onclick="handleLogin(false)">ข้าม</button>
-                <button class="btn btn-primary"   onclick="handleLogin(true)">เข้าสู่ระบบ</button>
+                <button class="btn btn-secondary" onclick="handleLogin(false)">ข้ามก่อน</button>
+                <button class="btn btn-primary"   onclick="handleLogin(true)">รับแต้มเลย</button>
             </div>
         </div>
     </div>
@@ -188,9 +193,9 @@
     <!-- PAYMENT MODAL -->
     <div id="paymentModal" class="modal">
         <div class="modal-content">
-            <h2>สรุปคำสั่งซื้อ</h2>
+            <h2>สรุปก่อนสั่ง 📋</h2>
             <div id="paymentSummary" style="text-align:left;margin-bottom:20px;font-family:'Itim';line-height:1.6;"></div>
-            <button class="btn-clear-cart" onclick="clearCart()">ล้างตะกร้าทั้งหมด</button>
+            <button class="btn-clear-cart" onclick="clearCart()">🧺 เคลียร์ตะกร้า</button>
             <div style="font-size:1.3rem;font-weight:bold;margin:20px 0;color:var(--primary);">ยอดรวมทั้งสิ้น: <span id="finalTotal">0</span> บาท</div>
             <p>เลือกวิธีการชำระเงิน:</p>
             <div class="payment-options">
@@ -208,7 +213,7 @@
             </div>
             <div class="btn-group" style="margin-top:20px;">
                 <button class="btn btn-secondary" onclick="closePaymentModal()">ยกเลิก</button>
-                <button class="btn btn-primary"   onclick="confirmOrder()">ยืนยันการสั่งซื้อ</button>
+                <button class="btn btn-primary"   onclick="confirmOrder()">🍜 สั่งโลด!</button>
             </div>
         </div>
     </div>
@@ -279,19 +284,19 @@
             el.className='zone-indicator no-zone';
             iconEl.className='zone-icon-wrap'; iconEl.innerText='📍';
             nameEl.innerText='ยังไม่ได้ระบุโซน';
-            statusEl.innerHTML='ปักหมุดตำแหน่งเพื่อตรวจสอบโซนจัดส่งค่ะ';
+            statusEl.innerHTML='📍 ปักหมุดก่อนสั่ง — บอกเราหน่อยว่าอยู่ไสเด้อ';
             return;
         }
         if (noRider) {
             el.className='zone-indicator no-rider';
             iconEl.className='zone-icon-wrap orange'; iconEl.innerText='⚠️';
             nameEl.innerText=zone.name;
-            statusEl.innerHTML=`<span style="color:#e65100;">ขณะนี้ไม่มีไรเดอร์ในโซนนี้ค่ะ — ลองสั่งใหม่อีกครั้งทีหลัง</span>`;
+            statusEl.innerHTML=`<span style="color:#e65100;">ตอนนี้ยังไม่มีไรเดอร์ในโซนนี้เด้อ — รอแป๊บเดี๋ยวมาแน่!</span>`;
         } else {
             el.className='zone-indicator has-zone';
             iconEl.className='zone-icon-wrap green'; iconEl.innerText='✅';
             nameEl.innerText=zone.name;
-            statusEl.innerHTML=`โซนจัดส่ง: <strong>${zone.name}</strong> · รัศมี ${zone.radius} กม.`;
+            statusEl.innerHTML=`📍 จัดส่งถึง <strong>${zone.name}</strong> · รัศมี ${zone.radius} กม. จัดได้เด้อ!`;
         }
     }
 
@@ -323,7 +328,7 @@
     }
 
     function locateMe() {
-        if (!navigator.geolocation) return alert("เบราว์เซอร์ไม่รองรับการระบุตำแหน่งค่ะ");
+        if (!navigator.geolocation) return alert("มือถือไม่ยอมบอกตำแหน่ง — คลิกปักหมุดบนแผนที่แทนเด้อ");
         showLoading(true);
         navigator.geolocation.getCurrentPosition(
             (pos)=>{
@@ -335,7 +340,7 @@
                 updateLocationInfo({lat,lng});
                 showLoading(false);
             },
-            ()=>{ alert("ไม่สามารถเข้าถึงตำแหน่งได้ กรุณาปักหมุดเองค่ะ"); showLoading(false); }
+            ()=>{ alert("จับพิกัดไม่ได้เด้อ — กรุณาคลิกปักหมุดบนแผนที่แทน"); showLoading(false); }
         );
     }
 
@@ -370,13 +375,13 @@
     async function handleLogin(isConfirm) {
         const phone=document.getElementById('phoneInput').value.trim();
         if (isConfirm) {
-            if (phone.length!==10) return alert("กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (10 หลัก)");
+            if (phone.length!==10) return alert("เบอร์ 10 หลักเด้อ — ลองใหม่นะ");
             showLoading(true);
             try {
                 const res=await fetch(`${SCRIPT_URL}?action=getMember&phone=${phone}`);
                 const data=await res.json();
                 state.user=(data&&data.found)?{phone,name:data.name,points:data.points||0}:{phone,name:'ลูกค้าทั่วไป',points:0};
-            } catch(e){ alert("การเชื่อมต่อล้มเหลว"); showLoading(false); return; }
+            } catch(e){ alert("เน็ตมีปัญหาหรือเด้อ — ลองใหม่ทีหลัง"); showLoading(false); return; }
             showLoading(false);
         } else {
             state.user={phone:'ลูกค้าทั่วไป',name:'ลูกค้าทั่วไป',points:0};
@@ -411,7 +416,7 @@
     // ── STORES ────────────────────────────────────────────
     function renderStores() {
         const grid=document.getElementById('storeGrid');
-        if (!state.stores.length) { grid.innerHTML='<div style="text-align:center;color:#999;padding:20px;grid-column:1/-1;">ไม่พบร้านค้าค่ะ</div>'; return; }
+        if (!state.stores.length) { grid.innerHTML='<div style="text-align:center;color:#999;padding:20px;grid-column:1/-1;">ยังไม่มีร้านค้าเด้อ — ไว้กลับมาอีกรอบน๊า</div>'; return; }
         grid.innerHTML='';
         state.stores.forEach(store=>{
             const cnt    = state.menu.filter(i=>i.storeId===store.storeId).length;
@@ -466,12 +471,13 @@
         const grid=document.getElementById('menuGrid');
         grid.innerHTML='';
         const toShow=(cat==='ทั้งหมด')?items:items.filter(i=>i.category===cat);
-        if (!toShow.length) { grid.innerHTML='<div class="menu-empty">ไม่มีเมนูในหมวดนี้ค่ะ 🍽️</div>'; return; }
+        if (!toShow.length) { grid.innerHTML='<div class="menu-empty">ยังไม่มีในหมวดนี้เด้อ 🍽️</div>'; return; }
         toShow.forEach(item=>{
             const price=Math.ceil(item.price*config.productMarkup);
             const card=document.createElement('div');
             card.className='menu-item';
-            card.innerHTML=`<img src="${item.img||'https://via.placeholder.com/300x150?text=อาหาร'}" class="menu-img" onerror="this.src='https://via.placeholder.com/300x150?text=อาหาร'"><div class="menu-info"><h3>${item.name}</h3><div class="menu-price">${price} บาท</div></div><button class="add-btn">เพิ่มลงตะกร้า</button>`;
+            const badge=item.stock>10 ? '<div class="menu-badge hot">🔥 เมนูฮิต</div>' : (item.stock>0&&item.stock<=10?'<div class="menu-badge reco">⭐ แนะนำ</div>':'');
+            card.innerHTML=`${badge}<img src="${item.img||'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300&h=200&fit=crop'}" class="menu-img" onerror="this.src='https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300&h=200&fit=crop'"><div class="menu-info"><h3>${item.name}</h3><div class="menu-price">${price} บาท</div></div><button class="add-btn">ใส่ตะกร้า 🧺</button>`;
             card.onclick=()=>addToCart(item.name,price,state.currentStoreId);
             grid.appendChild(card);
         });
@@ -480,7 +486,7 @@
     // ── CART ──────────────────────────────────────────────
     function addToCart(name,price,storeId) {
         if (state.cart.length>0 && state.cart[0].storeId!==storeId) {
-            if (!confirm("ตะกร้ามีอาหารจากร้านอื่น ต้องการล้างและเลือกร้านใหม่ไหม?")) return;
+            if (!confirm("ตะกร้ามีของจากร้านอื่นเด้อ — เอาของเก่าออกก่อนไหม?")) return;
             state.cart=[]; updateCartBar();
         }
         const ex=state.cart.find(i=>i.name===name);
@@ -496,16 +502,16 @@
         updateCartBar(); renderPaymentSummary();
     }
     function clearCart() {
-        if (confirm("ต้องการล้างตะกร้าทั้งหมดใช่ไหมคะ?")) { state.cart=[]; updateCartBar(); renderPaymentSummary(); }
+        if (confirm("เคลียร์ตะกร้าทิ้งเลยเด้อ?")) { state.cart=[]; updateCartBar(); renderPaymentSummary(); }
     }
 
     // ── PAYMENT ───────────────────────────────────────────
     function openPaymentModal() {
-        if (!state.cart.length) return alert("ยังไม่มีอาหารในตะกร้าเลยค่ะ");
-        if (!state.selectedLocation) return alert("กรุณาปักหมุดตำแหน่งจัดส่งก่อนสั่งซื้อค่ะ");
+        if (!state.cart.length) return alert("หยิบของใส่ตะกร้าก่อนเด้อ!");
+        if (!state.selectedLocation) return alert("ปักหมุดก่อนเด้อ — คลิกที่แผนที่เลือกตำแหน่งก่อนสั่ง");
         const {lat,lng}=state.selectedLocation;
         const dist=calcDist(SHOP_COORDS[0],SHOP_COORDS[1],lat,lng);
-        if (dist>config.deliveryRadius) return alert(`ขออภัยค่ะ ระยะทาง ${dist.toFixed(2)} กม. เกินรัศมีบริการ ${config.deliveryRadius} กม.`);
+        if (dist>config.deliveryRadius) return alert(`ขอโทษเด้อ ระยะทาง ${dist.toFixed(2)} กม. ไกลเกินส่ง ${config.deliveryRadius} กม. — ลองปักหมุดใกล้กว่านี้`);
         document.getElementById('paymentModal').style.display='flex';
         renderPaymentSummary();
     }
@@ -558,10 +564,10 @@
             if (result.status==='success') {
                 state.user.points=result.totalPoints;
                 updateUserUI();
-                alert(`สั่งซื้อสำเร็จ! ได้รับ ${result.points} แต้ม รวมเป็น ${result.totalPoints} แต้มเด้อจ้า 🎉`);
+                alert(`สั่งสำเร็จเด้อ ได้ ${result.points} แต้ม รวม ${result.totalPoints} แต้มแล้ว! 🎉`);
                 state.cart=[]; updateCartBar(); closePaymentModal();
-            } else { alert("เกิดข้อผิดพลาด: "+result.message); }
-        } catch(e) { alert("เกิดข้อผิดพลาดในการส่งคำสั่งซื้อ"); }
+            } else { alert("มีปัญหานิดหน่อยเด้อ: "+result.message); }
+        } catch(e) { alert("สั่งไม่ติดเด้อ — เช็กเน็ตแล้วลองใหม่"); }
         showLoading(false);
     }
 
@@ -569,9 +575,9 @@
     function updateGreeting() {
         const h=new Date().getHours();
         const el=document.getElementById('greeting');
-        if (h<12)      el.innerText="สะบายดีตอนเช้าเจ้าค่ะ ☀️";
-        else if (h<17) el.innerText="สะบายดีตอนบ่ายเจ้าค่ะ 🌤️";
-        else           el.innerText="สะบายดีตอนแลงเจ้าค่ะ 🌙";
+        if (h<12)      el.innerText="ตอนเช้าแซ่บ ๆ 🌅  สั่งโลด!";
+        else if (h<17) el.innerText="ตอนบ่ายหิวบ่ ☀️  สั่งโลด!";
+        else           el.innerText="ตอนแลงหิวเด้ 🌙  สั่งโลด!";
     }
 
     // ── AUTO REFRESH ───────────────────────────────────────
